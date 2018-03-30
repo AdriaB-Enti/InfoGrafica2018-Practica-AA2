@@ -13,7 +13,7 @@ extern void PhysicsUpdate(float dt);
 extern void PhysicsCleanup();*/
 extern void GUI();
 
-extern void GLmousecb(MouseEvent ev);
+//extern void GLmousecb(MouseEvent ev);
 extern void GLResize(int width, int height);
 extern void GLinit(int width, int height);
 extern void GLcleanup();
@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
 				(io.MouseDown[1] ? MouseEvent::Button::Right :
 				(io.MouseDown[2] ? MouseEvent::Button::Middle :
 				MouseEvent::Button::None)))};
-			GLmousecb(ev);
+			//GLmousecb(ev);
 		}
 
 
