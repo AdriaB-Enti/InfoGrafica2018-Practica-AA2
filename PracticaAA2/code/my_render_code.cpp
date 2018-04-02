@@ -62,7 +62,8 @@ namespace ImGui {
 
 namespace Scene {
 	int currentScene = 1;	//1, 2, 3...
-	void renderScene1();
+	void renderScene1(double currentTime);
+	void renderScene2(double currentTime);
 	void detectInput();
 }
 
@@ -120,10 +121,22 @@ namespace RV = RenderVars;
 
 
 namespace Scene {
-	void renderScene1() {
+	void renderScene1(double currentTime) {
 		ImGui::Begin("Scene #1");
-		//ImGui::Text("test");
+		ImGui::Text("Cubes");
 		ImGui::End();
+
+		CubeShader::ShaderRenderCode(currentTime);												//Renderizar los shaders
+
+	}
+
+	void renderScene2(double currentTime) {
+		ImGui::Begin("Scene #2");
+		ImGui::Text("Truncated octahedrons");
+		ImGui::End();
+
+		truncOctahedronShader::ShaderRenderCode(currentTime);
+
 	}
 
 	//Detect keyboard input to change scene
@@ -175,10 +188,11 @@ void GLrender(double currentTime) {
 
 	switch (Scene::currentScene)	//using the var currentScene, we render the right scene
 	{
-	case 1: Scene::renderScene1();
+	case 1: Scene::renderScene1(currentTime);
 		break;
-	/*case 2: Scene::renderScene2();
+	case 2: Scene::renderScene2(currentTime);
 		break;
+	/*
 	case 3: Scene::renderScene3();
 		break;*/
 	default: //Shouldn't happen
@@ -186,7 +200,6 @@ void GLrender(double currentTime) {
 	}
 
 
-	CubeShader::ShaderRenderCode(currentTime);												//Renderizar los shaders
 
 	ImGui::Render();
 	Scene::detectInput();
