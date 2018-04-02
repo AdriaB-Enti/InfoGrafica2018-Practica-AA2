@@ -12,17 +12,50 @@
 
 //Global variables
 
+//Cubo 1
 int _square1XRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
 float _square1X = _square1XRandom / 10000.0;			//ahora lo convierte en uno entre -0.2 y 0.2
-	
 int _square1YRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
 float _square1Y = _square1YRandom / 10000.0;			//Entre -0.2 y 0.2
-
 int _square1ZRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
 float _square1Z = _square1ZRandom / 10000.0;			//Entre -0.2 y 0.2
-
 float _square1W = 1.f;
 glm::vec4 _square1 = { _square1X,_square1Y,_square1Z,_square1W };	//coordenadas del punto central, la seed 
+
+//Cubo 2
+int _square2XRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
+float _square2X = _square2XRandom / 10000.0;			//ahora lo convierte en uno entre -0.2 y 0.2
+int _square2YRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
+float _square2Y = _square2YRandom / 10000.0;			//Entre -0.2 y 0.2
+int _square2ZRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
+float _square2Z = _square2ZRandom / 10000.0;			//Entre -0.2 y 0.2
+float _square2W = 1.f;
+glm::vec4 _square2 = { _square2X,_square2Y,_square2Z,_square2W };	//coordenadas del punto central, la seed 
+
+//Cubo 3
+int _square3XRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
+float _square3X = _square3XRandom / 10000.0;			//ahora lo convierte en uno entre -0.2 y 0.2
+int _square3YRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
+float _square3Y = _square3YRandom / 10000.0;			//Entre -0.2 y 0.2
+int _square3ZRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
+float _square3Z = _square3ZRandom / 10000.0;			//Entre -0.2 y 0.2
+float _square3W = 1.f;
+glm::vec4 _square3 = { _square3X,_square3Y,_square3Z,_square3W };	//coordenadas del punto central, la seed 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 float _distanceWall = 0.2;											//Distancia entre el punto cental y las paredes 
 
 
@@ -172,10 +205,18 @@ namespace ShaderClass {
 		"#version 330\n\
 		\n\
 		void main(){ \n\
-		const vec4 vertices[3] = vec4[3](vec4(0.25,-0.25,0.5,1.0),\n\
+		const vec4 square1[3] = vec4[3](vec4(0.25,-0.25,0.5,1.0),\n\
 									vec4(0.25,0.25,0.5,1.0),\n\
 									vec4(-0.25,-0.25,0.5,1.0));\n\
-		gl_Position = vertices[gl_VertexID];\n\
+		const vec4 square2[3] = vec4[3](vec4(0.25,-0.25,0.5,1.0),\n\
+									vec4(0.25,0.25,0.5,1.0),\n\
+									vec4(-0.25,-0.25,0.5,1.0));\n\
+		const vec4 square3[3] = vec4[3](vec4(0.25,-0.25,0.5,1.0),\n\
+									vec4(0.25,0.25,0.5,1.0),\n\
+									vec4(-0.25,-0.25,0.5,1.0));\n\
+		gl_Position = square1[gl_VertexID];\n\
+		gl_Position = square2[gl_VertexID];\n\
+		gl_Position = square3[gl_VertexID];\n\
 		}"
 	};
 
@@ -202,19 +243,33 @@ namespace ShaderClass {
 	{ "#version 330																										\n\
 			uniform float time;																							\n\
 			uniform mat4 mvpMat;																						\n\
+			\n\
 			uniform float square1X;																						\n\
 			uniform float square1Y;																						\n\
 			uniform float square1Z;																						\n\
 			uniform float square1W;																						\n\
+			\n\
+			uniform float square2X;																						\n\
+			uniform float square2Y;																						\n\
+			uniform float square2Z;																						\n\
+			uniform float square2W;																						\n\
+			\n\
+			uniform float square3X;																						\n\
+			uniform float square3Y;																						\n\
+			uniform float square3Z;																						\n\
+			uniform float square3W;																						\n\
+			\n\
 			uniform float distanceWall;																					\n\
+			\n\
+			int counterCubes = 0;																						\n\
 			layout(triangles) in;																						\n\
-			layout(triangle_strip,max_vertices = 24) out;																\n\
+			layout(triangle_strip,max_vertices = 48) out;																\n\
 																														\n\
 			void main(){																								\n\
 																														\n\
 				float sinus = 1;																						\n\
 				float cosinus = 1;																						\n\
-				vec4 vertices[24]=vec4[24](vec4(distanceWall + square1X, -distanceWall + square1Y, distanceWall + square1Z, square1W),			\n\
+				vec4 square1[24]=vec4[24](vec4(distanceWall + square1X, -distanceWall + square1Y, distanceWall + square1Z, square1W),			\n\
 										vec4(distanceWall + square1X, distanceWall + square1Y, distanceWall + square1Z, square1W),				\n\
 										vec4(-distanceWall + square1X, -distanceWall + square1Y, distanceWall + square1Z, square1W),			\n\
 										vec4(-distanceWall + square1X, distanceWall + square1Y, distanceWall + square1Z, square1W),				\n\
@@ -243,42 +298,185 @@ namespace ShaderClass {
 										vec4(distanceWall + square1X, distanceWall + square1Y, -distanceWall + square1Z, square1W),				\n\
 										vec4(distanceWall + square1X, -distanceWall + square1Y, distanceWall + square1Z, square1W),				\n\
 										vec4(distanceWall + square1X, distanceWall + square1Y, distanceWall + square1Z, square1W));				\n\
-				for(int i = 0; i < 4; i++){																		\n\
-					gl_Position = mvpMat * vertices[i];															\n\
-					gl_PrimitiveID = 0;																			\n\
-					EmitVertex();																				\n\
-				}																								\n\
-				EndPrimitive();																					\n\
-				for(int i = 4; i < 8; i++){																		\n\
-					gl_Position = mvpMat * vertices[i];															\n\
-					gl_PrimitiveID = 1;																			\n\
-					EmitVertex();																				\n\
-				}																								\n\
-				EndPrimitive();																					\n\
-				for(int i = 8; i < 12; i++){																	\n\
-					gl_Position = mvpMat* vertices[i];															\n\
-					gl_PrimitiveID = 2;																			\n\
-					EmitVertex();																				\n\
-				}																								\n\
-				EndPrimitive();																					\n\
-				for(int i = 12; i < 16; i++){																	\n\
-					gl_Position = mvpMat * vertices[i];															\n\
-					gl_PrimitiveID = 3;																			\n\
-					EmitVertex();																				\n\
-				}																								\n\
-				EndPrimitive();																					\n\
-				for(int i = 16; i < 20; i++){																	\n\
-					gl_Position = mvpMat * vertices[i];															\n\
-					gl_PrimitiveID = 4;																			\n\
-					EmitVertex();																				\n\
-				}																								\n\
-				EndPrimitive();																					\n\
-				for(int i = 20; i < 24; i++){																	\n\
-					gl_Position = mvpMat * vertices[i];															\n\
-					gl_PrimitiveID = 5;																			\n\
-					EmitVertex();																				\n\
-				}																								\n\
-				EndPrimitive();																					\n\
+					\n\
+					vec4 square2[24]=vec4[24](vec4(distanceWall + square2X, -distanceWall + square2Y, distanceWall + square2Z, square2W),		\n\
+										vec4(distanceWall + square2X, distanceWall + square2Y, distanceWall + square2Z, square2W),				\n\
+										vec4(-distanceWall + square2X, -distanceWall + square2Y, distanceWall + square2Z, square2W),			\n\
+										vec4(-distanceWall + square2X, distanceWall + square2Y, distanceWall + square2Z, square2W),				\n\
+																																				\n\
+										vec4(distanceWall + square2X, distanceWall + square2Y, distanceWall + square2Z, square2W),				\n\
+										vec4(distanceWall + square2X, distanceWall + square2Y, -distanceWall + square2Z, square2W),				\n\
+										vec4(-distanceWall + square2X, distanceWall + square2Y, distanceWall + square2Z, square2W),				\n\
+										vec4(-distanceWall + square2X, distanceWall + square2Y, -distanceWall + square2Z, square2W),			\n\
+																																				\n\
+										vec4(-distanceWall + square2X, -distanceWall + square2Y, distanceWall + square2Z, square2W),			\n\
+										vec4(-distanceWall + square2X, distanceWall + square2Y, distanceWall + square2Z, square2W),				\n\
+										vec4(-distanceWall + square2X, -distanceWall + square2Y, -distanceWall + square2Z, square2W),			\n\
+										vec4(-distanceWall + square2X, distanceWall + square2Y, -distanceWall + square2Z, square2W),			\n\
+																																				\n\
+										vec4(-distanceWall + square2X, -distanceWall + square2Y, -distanceWall + square2Z, square2W),			\n\
+										vec4(-distanceWall + square2X, distanceWall + square2Y, -distanceWall + square2Z, square2W),			\n\
+										vec4(distanceWall + square2X, -distanceWall + square2Y, -distanceWall + square2Z, square2W),			\n\
+										vec4(distanceWall + square2X, distanceWall + square2Y, -distanceWall + square2Z, square2W),				\n\
+																																				\n\
+										vec4(-distanceWall + square2X, -distanceWall + square2Y, distanceWall + square2Z, square2W),			\n\
+										vec4(-distanceWall + square2X, -distanceWall + square2Y, -distanceWall + square2Z, square2W),			\n\
+										vec4(distanceWall + square2X, -distanceWall + square2Y, distanceWall + square2Z, square2W),				\n\
+										vec4(distanceWall + square2X, -distanceWall + square2Y, -distanceWall + square2Z, square2W),			\n\
+																																				\n\
+										vec4(distanceWall + square2X, -distanceWall + square2Y, -distanceWall + square2Z, square2W),			\n\
+										vec4(distanceWall + square2X, distanceWall + square2Y, -distanceWall + square2Z, square2W),				\n\
+										vec4(distanceWall + square2X, -distanceWall + square2Y, distanceWall + square2Z, square2W),				\n\
+										vec4(distanceWall + square2X, distanceWall + square2Y, distanceWall + square2Z, square2W));				\n\
+					\n\
+					vec4 square3[24]=vec4[24](vec4(distanceWall + square3X, -distanceWall + square3Y, distanceWall + square3Z, square3W),		\n\
+										vec4(distanceWall + square3X, distanceWall + square3Y, distanceWall + square3Z, square3W),				\n\
+										vec4(-distanceWall + square3X, -distanceWall + square3Y, distanceWall + square3Z, square3W),			\n\
+										vec4(-distanceWall + square3X, distanceWall + square3Y, distanceWall + square3Z, square3W),				\n\
+																																				\n\
+										vec4(distanceWall + square3X, distanceWall + square3Y, distanceWall + square3Z, square3W),				\n\
+										vec4(distanceWall + square3X, distanceWall + square3Y, -distanceWall + square3Z, square3W),				\n\
+										vec4(-distanceWall + square3X, distanceWall + square3Y, distanceWall + square3Z, square3W),				\n\
+										vec4(-distanceWall + square3X, distanceWall + square3Y, -distanceWall + square3Z, square3W),			\n\
+																																				\n\
+										vec4(-distanceWall + square3X, -distanceWall + square3Y, distanceWall + square3Z, square3W),			\n\
+										vec4(-distanceWall + square3X, distanceWall + square3Y, distanceWall + square3Z, square3W),				\n\
+										vec4(-distanceWall + square3X, -distanceWall + square3Y, -distanceWall + square3Z, square3W),			\n\
+										vec4(-distanceWall + square3X, distanceWall + square3Y, -distanceWall + square3Z, square3W),			\n\
+																																				\n\
+										vec4(-distanceWall + square3X, -distanceWall + square3Y, -distanceWall + square3Z, square3W),			\n\
+										vec4(-distanceWall + square3X, distanceWall + square3Y, -distanceWall + square3Z, square3W),			\n\
+										vec4(distanceWall + square3X, -distanceWall + square3Y, -distanceWall + square3Z, square3W),			\n\
+										vec4(distanceWall + square3X, distanceWall + square3Y, -distanceWall + square3Z, square3W),				\n\
+																																				\n\
+										vec4(-distanceWall + square3X, -distanceWall + square3Y, distanceWall + square3Z, square3W),			\n\
+										vec4(-distanceWall + square3X, -distanceWall + square3Y, -distanceWall + square3Z, square3W),			\n\
+										vec4(distanceWall + square3X, -distanceWall + square3Y, distanceWall + square3Z, square3W),				\n\
+										vec4(distanceWall + square3X, -distanceWall + square3Y, -distanceWall + square3Z, square3W),			\n\
+																																				\n\
+										vec4(distanceWall + square3X, -distanceWall + square3Y, -distanceWall + square3Z, square3W),			\n\
+										vec4(distanceWall + square3X, distanceWall + square3Y, -distanceWall + square3Z, square3W),				\n\
+										vec4(distanceWall + square3X, -distanceWall + square3Y, distanceWall + square3Z, square3W),				\n\
+										vec4(distanceWall + square3X, distanceWall + square3Y, distanceWall + square3Z, square3W));				\n\
+					\n\
+					if(counterCubes == 0){																			\n\
+					for(int i = 0; i < 4; i++){																		\n\
+						gl_Position = mvpMat * square1[i];															\n\
+						gl_PrimitiveID = 0;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 4; i < 8; i++){																		\n\
+						gl_Position = mvpMat * square1[i];															\n\
+						gl_PrimitiveID = 1;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 8; i < 12; i++){																	\n\
+						gl_Position = mvpMat * square1[i];															\n\
+						gl_PrimitiveID = 2;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 12; i < 16; i++){																	\n\
+						gl_Position = mvpMat * square1[i];															\n\
+						gl_PrimitiveID = 3;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 16; i < 20; i++){																	\n\
+						gl_Position = mvpMat * square1[i];															\n\
+						gl_PrimitiveID = 4;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 20; i < 24; i++){																	\n\
+						gl_Position = mvpMat * square1[i];															\n\
+						gl_PrimitiveID = 5;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					counterCubes++;																					\n\
+				}															\n\
+				if(counterCubes == 1){										\n\
+					for(int i = 0; i < 4; i++){																		\n\
+						gl_Position = mvpMat * square2[i];															\n\
+						gl_PrimitiveID = 0;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 4; i < 8; i++){																		\n\
+						gl_Position = mvpMat * square2[i];															\n\
+						gl_PrimitiveID = 1;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 8; i < 12; i++){																	\n\
+						gl_Position = mvpMat * square2[i];															\n\
+						gl_PrimitiveID = 2;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 12; i < 16; i++){																	\n\
+						gl_Position = mvpMat * square2[i];															\n\
+						gl_PrimitiveID = 3;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 16; i < 20; i++){																	\n\
+						gl_Position = mvpMat * square2[i];															\n\
+						gl_PrimitiveID = 4;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 20; i < 24; i++){																	\n\
+						gl_Position = mvpMat * square2[i];															\n\
+						gl_PrimitiveID = 5;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					counterCubes++;																					\n\
+				}\n\
+																			\n\
+				if(counterCubes == 2){										\n\
+					for(int i = 0; i < 4; i++){																		\n\
+						gl_Position = mvpMat * square3[i];															\n\
+						gl_PrimitiveID = 0;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 4; i < 8; i++){																		\n\
+						gl_Position = mvpMat * square3[i];															\n\
+						gl_PrimitiveID = 1;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 8; i < 12; i++){																	\n\
+						gl_Position = mvpMat * square3[i];															\n\
+						gl_PrimitiveID = 2;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 12; i < 16; i++){																	\n\
+						gl_Position = mvpMat * square3[i];															\n\
+						gl_PrimitiveID = 3;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 16; i < 20; i++){																	\n\
+						gl_Position = mvpMat * square3[i];															\n\
+						gl_PrimitiveID = 4;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					for(int i = 20; i < 24; i++){																	\n\
+						gl_Position = mvpMat * square3[i];															\n\
+						gl_PrimitiveID = 5;																			\n\
+						EmitVertex();																				\n\
+					}																								\n\
+					EndPrimitive();																					\n\
+					counterCubes++;																					\n\
+				}\n\
 			}" };
 
 
@@ -341,10 +539,22 @@ namespace ShaderClass {
 		glUseProgram(ShaderRenderProgram);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)currentTime);
 
+		//Cubo 1
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1X"), (GLfloat)_square1[0]);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1Y"), (GLfloat)_square1[1]);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1Z"), (GLfloat)_square1[2]);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1W"), (GLfloat)_square1[3]);
+		//Cubo 2
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square2X"), (GLfloat)_square2[0]);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square2Y"), (GLfloat)_square2[1]);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square2Z"), (GLfloat)_square2[2]);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square2W"), (GLfloat)_square2[3]);
+		//Cubo 3 
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square3X"), (GLfloat)_square3[0]);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square3Y"), (GLfloat)_square3[1]);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square3Z"), (GLfloat)_square3[2]);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square3W"), (GLfloat)_square3[3]);
+
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);
 
 
