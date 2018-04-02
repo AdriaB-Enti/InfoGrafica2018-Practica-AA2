@@ -52,10 +52,6 @@ glm::vec4 _square3 = { _square3X,_square3Y,_square3Z,_square3W };	//coordenadas 
 
 
 
-
-
-
-
 float _distanceWall = 0.2;											//Distancia entre el punto cental y las paredes 
 
 
@@ -70,7 +66,7 @@ namespace Scene {
 	void detectInput();
 }
 
-namespace ShaderClass {
+namespace CubeShader {
 	
 	void ShaderInitCode();
 	GLuint ShaderCompile();
@@ -82,6 +78,15 @@ namespace ShaderClass {
 	GLuint ShaderVAO;
 }
 
+namespace truncOctahedronShader{
+	void ShaderInitCode();
+	GLuint ShaderCompile();
+	void ShaderCleanupCode(void);
+	void ShaderRenderCode(double currentTime);
+
+	GLuint ShaderRenderProgram;
+	GLuint ShaderVAO;
+}
 
 namespace RenderVars {
 	const float FOV = glm::radians(90.f);
@@ -154,7 +159,7 @@ void GLinit(int width, int height) {
 	//lastWidth = width;
 	//lastHeight = height;
 
-	ShaderClass::ShaderInitCode();					//Inicizlizar los shaders 
+	CubeShader::ShaderInitCode();					//Inicizlizar los shaders 
 }
 
 void GLcleanup() {
@@ -162,7 +167,7 @@ void GLcleanup() {
 	//Axis::cleanupAxis();
 	//Cube::cleanupCube();
 
-	ShaderClass::ShaderCleanupCode();										
+	CubeShader::ShaderCleanupCode();										
 }
 
 void GLrender(double currentTime) {
@@ -181,7 +186,7 @@ void GLrender(double currentTime) {
 	}
 
 
-	ShaderClass::ShaderRenderCode(currentTime);												//Renderizar los shaders
+	CubeShader::ShaderRenderCode(currentTime);												//Renderizar los shaders
 
 	ImGui::Render();
 	Scene::detectInput();
@@ -199,8 +204,8 @@ void GLResize(int width, int height) {
 }
 
 
-namespace ShaderClass {
-	static const GLchar * vertex_shader_source[] =
+namespace CubeShader {
+	static const GLchar * cube_vertex_shader_source[] =
 	{
 		"#version 330\n\
 		\n\
@@ -221,7 +226,7 @@ namespace ShaderClass {
 	};
 
 
-	static const GLchar * fragment_shader_source[] =
+	static const GLchar * cube_fragment_shader_source[] =
 	{
 		"#version 330\n\
 		\n\
@@ -229,7 +234,8 @@ namespace ShaderClass {
 		\n\
 		void main(){\n\
 			color = vec4(0.0,0.8,1.0,1.0);\n\
-			const vec4 colorsLados[6] = vec4[6](vec4( 0, 1, 0,1.0),				\n\												vec4(0.5, 1, 0.5, 1.0),			\n\
+			const vec4 colorsLados[6] = vec4[6](vec4( 0, 1, 0,1.0),				\n\
+												vec4(0.5, 1, 0.5, 1.0),			\n\
 												vec4(1, 0.25, 0.5, 1.0),		\n\
 												vec4(0.25, 0, 0, 1.0),			\n\
 												vec4( 1, 0, 0, 1.0),			\n\
@@ -239,7 +245,7 @@ namespace ShaderClass {
 	};
 
 
-	static const GLchar * geom_shader_source[] =
+	static const GLchar * cube_geom_shader_source[] =
 	{ "#version 330																										\n\
 			uniform float time;																							\n\
 			uniform mat4 mvpMat;																						\n\
@@ -493,16 +499,16 @@ namespace ShaderClass {
 
 		
 		vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(vertex_shader, 1, vertex_shader_source, NULL);		//Es pasa a la targeta grafica 
+		glShaderSource(vertex_shader, 1, cube_vertex_shader_source, NULL);		//Es pasa a la targeta grafica 
 		glCompileShader(vertex_shader);										//Ara es te de compilar 
 
 		geom_shader = glCreateShader(GL_GEOMETRY_SHADER);						//Per fer el geometry shader
-		glShaderSource(geom_shader, 1, geom_shader_source, NULL);
+		glShaderSource(geom_shader, 1, cube_geom_shader_source, NULL);
 		glCompileShader(geom_shader);
 
 		fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 		
-		glShaderSource(fragment_shader, 1, fragment_shader_source, NULL);
+		glShaderSource(fragment_shader, 1, cube_fragment_shader_source, NULL);
 		glCompileShader(fragment_shader);							//Compila el shaders
 
 		program = glCreateProgram();								//Es crea un programa
@@ -566,17 +572,17 @@ namespace ShaderClass {
 
 		glm::mat4 rotSquare1 = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.f, 1.f, 0.f));												//E3. Con esto, se hace que la matriz rote.
 		myMVPsquare1 = rotSquare1 * myMVPsquare1;																						//E3. Para aplicar la transformacion
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMatSquare1"), 1, GL_FALSE, glm::value_ptr(myMVPsquare1));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en geom_shader_source[]
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMatSquare1"), 1, GL_FALSE, glm::value_ptr(myMVPsquare1));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
 
 		glm::mat4 rotSquare2 = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.5f, 0.f, 0.5f));												//Con esto, se hace que la matriz rote.
 		myMVPsquare2 = rotSquare2 * myMVPsquare2;																						//Para aplicar la transformacion
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMatSquare2"), 1, GL_FALSE, glm::value_ptr(myMVPsquare2));		//La matriz se aplica a mvpMat, que multiplicara a los puntos en geom_shader_source[]
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMatSquare2"), 1, GL_FALSE, glm::value_ptr(myMVPsquare2));		//La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
 
 		glm::mat4 rotSquare3 = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.5f, 1.f, 0.5f));												//Con esto, se hace que la matriz rote.
 		myMVPsquare3 = rotSquare3 * myMVPsquare3;																						//Para aplicar la transformacion
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMatSquare3"), 1, GL_FALSE, glm::value_ptr(myMVPsquare3));		//La matriz se aplica a mvpMat, que multiplicara a los puntos en geom_shader_source[]
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMatSquare3"), 1, GL_FALSE, glm::value_ptr(myMVPsquare3));		//La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
 
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RV::_MVP));			//La matriz se aplica a mvpMat, que multiplicara a los puntos en geom_shader_source[]
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RV::_MVP));			//La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
 
 		
 		//glPointSize(40.0f);						//Cada vertex te un tamany de 40 pixels 
@@ -584,3 +590,92 @@ namespace ShaderClass {
 	}
 
 }
+
+namespace truncOctahedronShader {
+	static const GLchar * trOct_vertex_shader_source[] =
+	{
+		"#version 330\n\
+		\n\
+		void main(){ \n\
+		gl_Position = vec4(0,0,0,1);\n\
+		}"
+	};
+	static const GLchar * trOct_fragment_shader_source[] =
+	{
+		"#version 330\n\
+		\n\
+		out vec4 color;\n\
+		\n\
+		void main(){\n\
+			color = vec4(0.0,0.8,1.0,1.0);\n\
+			const vec4 colorsLados[6] = vec4[6](vec4( 0, 1, 0,1.0),				\n\
+												vec4(0.5, 1, 0.5, 1.0),			\n\
+												vec4(1, 0.25, 0.5, 1.0),		\n\
+												vec4(0.25, 0, 0, 1.0),			\n\
+												vec4( 1, 0, 0, 1.0),			\n\
+												vec4( 0.25, 0.25, 0.5, 1.0));	\n\
+			color = colorsLados[gl_PrimitiveID ];								\n\
+		}"
+	};
+
+	//TODO
+	static const GLchar * trOct_geom_shader_source[] =
+	{
+		"#version 330\n\
+		\n\
+		void main(){ \n\
+		gl_Position = vec4(0,0,0,1);\n\
+		}"
+	};
+
+	GLuint	ShaderCompile() {
+		GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+		glShaderSource(vertex_shader, 1, trOct_vertex_shader_source, NULL);
+		glCompileShader(vertex_shader);
+
+		GLuint geom_shader = glCreateShader(GL_GEOMETRY_SHADER);
+		glShaderSource(geom_shader, 1, trOct_geom_shader_source, NULL);
+		glCompileShader(geom_shader);
+
+		GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(fragment_shader, 1, trOct_fragment_shader_source, NULL);
+		glCompileShader(fragment_shader);
+
+		GLuint program = glCreateProgram();
+		glAttachShader(program, vertex_shader);
+		glAttachShader(program, fragment_shader);
+		glAttachShader(program, geom_shader);
+		glLinkProgram(program);
+
+		glDeleteShader(vertex_shader);
+		glDeleteShader(geom_shader);
+		glDeleteShader(fragment_shader);
+
+		return program;
+	}
+
+	void ShaderInitCode() {
+		ShaderRenderProgram = ShaderCompile();
+		glCreateVertexArrays(1, &ShaderVAO);
+		glBindVertexArray(ShaderVAO);
+	}
+	void ShaderCleanupCode(void) {
+		glDeleteVertexArrays(1, &ShaderVAO);
+		glBindVertexArray(ShaderRenderProgram);
+	}
+	void ShaderRenderCode(double currentTime) {
+		const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
+		glClearBufferfv(GL_COLOR, 0, color);
+
+		glUseProgram(ShaderRenderProgram);
+
+		//glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);
+
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RV::_MVP));
+
+		glDrawArrays(GL_TRIANGLES, 0, 24);
+	}
+
+}
+
+//TODO: els compileShader i linkProgram que tinguin les seves propies funcions (està a l'altre pràctica)
