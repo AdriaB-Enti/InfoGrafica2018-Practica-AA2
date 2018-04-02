@@ -248,16 +248,19 @@ namespace ShaderClass {
 			uniform float square1Y;																						\n\
 			uniform float square1Z;																						\n\
 			uniform float square1W;																						\n\
+			uniform mat4 mvpMatSquare1;																					\n\
 			\n\
 			uniform float square2X;																						\n\
 			uniform float square2Y;																						\n\
 			uniform float square2Z;																						\n\
 			uniform float square2W;																						\n\
+			uniform mat4 mvpMatSquare2;																					\n\
 			\n\
 			uniform float square3X;																						\n\
 			uniform float square3Y;																						\n\
 			uniform float square3Z;																						\n\
 			uniform float square3W;																						\n\
+			uniform mat4 mvpMatSquare3;																					\n\
 			\n\
 			uniform float distanceWall;																					\n\
 			\n\
@@ -362,37 +365,37 @@ namespace ShaderClass {
 					\n\
 					if(counterCubes == 0){																			\n\
 					for(int i = 0; i < 4; i++){																		\n\
-						gl_Position = mvpMat * square1[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare1 * square1[i] + falling;															\n\
 						gl_PrimitiveID = 0;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 4; i < 8; i++){																		\n\
-						gl_Position = mvpMat * square1[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare1 * square1[i] + falling;															\n\
 						gl_PrimitiveID = 1;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 8; i < 12; i++){																	\n\
-						gl_Position = mvpMat * square1[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare1 * square1[i] + falling;															\n\
 						gl_PrimitiveID = 2;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 12; i < 16; i++){																	\n\
-						gl_Position = mvpMat * square1[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare1 * square1[i] + falling;															\n\
 						gl_PrimitiveID = 3;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 16; i < 20; i++){																	\n\
-						gl_Position = mvpMat * square1[i] + falling;															\n\
+						gl_Position = mvpMat* mvpMatSquare1 * square1[i] + falling;															\n\
 						gl_PrimitiveID = 4;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 20; i < 24; i++){																	\n\
-						gl_Position = mvpMat * square1[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare1 * square1[i] + falling;															\n\
 						gl_PrimitiveID = 5;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
@@ -401,37 +404,37 @@ namespace ShaderClass {
 				}															\n\
 				if(counterCubes == 1){										\n\
 					for(int i = 0; i < 4; i++){																		\n\
-						gl_Position = mvpMat * square2[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare2 * square2[i] + falling;															\n\
 						gl_PrimitiveID = 0;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 4; i < 8; i++){																		\n\
-						gl_Position = mvpMat * square2[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare2 * square2[i] + falling;															\n\
 						gl_PrimitiveID = 1;				 															\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 8; i < 12; i++){																	\n\
-						gl_Position = mvpMat * square2[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare2 * square2[i] + falling;															\n\
 						gl_PrimitiveID = 2;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 12; i < 16; i++){																	\n\
-						gl_Position = mvpMat * square2[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare2 * square2[i] + falling;															\n\
 						gl_PrimitiveID = 3;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 16; i < 20; i++){																	\n\
-						gl_Position = mvpMat * square2[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare2 * square2[i] + falling;															\n\
 						gl_PrimitiveID = 4;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 20; i < 24; i++){																	\n\
-						gl_Position = mvpMat * square2[i] + falling;															\n\
+						gl_Position = mvpMat * mvpMatSquare2 * square2[i] + falling;															\n\
 						gl_PrimitiveID = 5;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
@@ -441,37 +444,37 @@ namespace ShaderClass {
 																			\n\
 				if(counterCubes == 2){										\n\
 					for(int i = 0; i < 4; i++){																		\n\
-						gl_Position = mvpMat * square3[i] + falling;												\n\
+						gl_Position = mvpMat * mvpMatSquare3 * square3[i] + falling;												\n\
 						gl_PrimitiveID = 0;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 4; i < 8; i++){																		\n\
-						gl_Position = mvpMat * square3[i] + falling;												\n\
+						gl_Position = mvpMat * mvpMatSquare3 * square3[i] + falling;												\n\
 						gl_PrimitiveID = 1;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 8; i < 12; i++){																	\n\
-						gl_Position = mvpMat * square3[i] + falling;												\n\
+						gl_Position = mvpMat * mvpMatSquare3 * square3[i] + falling;												\n\
 						gl_PrimitiveID = 2;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 12; i < 16; i++){																	\n\
-						gl_Position = mvpMat * square3[i] + falling;												\n\
+						gl_Position = mvpMat * mvpMatSquare3 * square3[i] + falling;												\n\
 						gl_PrimitiveID = 3;				 															\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 16; i < 20; i++){																	\n\
-						gl_Position = mvpMat * square3[i] + falling;												\n\
+						gl_Position = mvpMat * mvpMatSquare3 * square3[i] + falling;												\n\
 						gl_PrimitiveID = 4;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
 					EndPrimitive();																					\n\
 					for(int i = 20; i < 24; i++){																	\n\
-						gl_Position = mvpMat * square3[i] + falling;												\n\
+						gl_Position = mvpMat * mvpMatSquare3 * square3[i] + falling;												\n\
 						gl_PrimitiveID = 5;																			\n\
 						EmitVertex();																				\n\
 					}																								\n\
@@ -480,6 +483,7 @@ namespace ShaderClass {
 				}\n\
 			}" };
 
+	//Para el ejericio 3, se aplica un vector4 que le restara continuamente la posicion Y (time siempre esta aumentando de valor) para que caiga 
 
 	GLuint	ShaderCompile() {			//Punter a un espai de memoria, on tenim el nostre programa. Ens donara un valor, per invocar al programa compilat. GLuint = enter si o si positiu 
 		GLuint vertex_shader;				//GLuint es un unsigned int, que guarda direccions de memoria 
@@ -502,7 +506,6 @@ namespace ShaderClass {
 		glCompileShader(fragment_shader);							//Compila el shaders
 
 		program = glCreateProgram();								//Es crea un programa
-
 		
 
 		glAttachShader(program, vertex_shader);						//S' asocien els shaders al programa
@@ -532,6 +535,9 @@ namespace ShaderClass {
 		glBindVertexArray(ShaderRenderProgram);
 	}
 
+	glm::mat4 myMVPsquare1;					//E3. Matrices de rotacion para que los cubos giren 
+	glm::mat4 myMVPsquare2;					
+	glm::mat4 myMVPsquare3;
 
 	void ShaderRenderCode(double currentTime) {
 		const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
@@ -541,7 +547,7 @@ namespace ShaderClass {
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)currentTime);
 
 		//Cubo 1
-		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1X"), (GLfloat)_square1[0]);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1X"), (GLfloat)_square1[0]);				//E1. Pasamos las varibales de las seed al geom_shader
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1Y"), (GLfloat)_square1[1]);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1Z"), (GLfloat)_square1[2]);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1W"), (GLfloat)_square1[3]);
@@ -558,8 +564,19 @@ namespace ShaderClass {
 
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);
 
+		glm::mat4 rotSquare1 = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.f, 1.f, 0.f));												//E3. Con esto, se hace que la matriz rote.
+		myMVPsquare1 = rotSquare1 * myMVPsquare1;																						//E3. Para aplicar la transformacion
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMatSquare1"), 1, GL_FALSE, glm::value_ptr(myMVPsquare1));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en geom_shader_source[]
 
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RV::_MVP));	 //La matriz se aplica a mvpMat, que multiplicara a los puntos en geom_shader_source[]
+		glm::mat4 rotSquare2 = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.5f, 0.f, 0.5f));												//Con esto, se hace que la matriz rote.
+		myMVPsquare2 = rotSquare2 * myMVPsquare2;																						//Para aplicar la transformacion
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMatSquare2"), 1, GL_FALSE, glm::value_ptr(myMVPsquare2));		//La matriz se aplica a mvpMat, que multiplicara a los puntos en geom_shader_source[]
+
+		glm::mat4 rotSquare3 = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.5f, 1.f, 0.5f));												//Con esto, se hace que la matriz rote.
+		myMVPsquare3 = rotSquare3 * myMVPsquare3;																						//Para aplicar la transformacion
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMatSquare3"), 1, GL_FALSE, glm::value_ptr(myMVPsquare3));		//La matriz se aplica a mvpMat, que multiplicara a los puntos en geom_shader_source[]
+
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RV::_MVP));			//La matriz se aplica a mvpMat, que multiplicara a los puntos en geom_shader_source[]
 
 		
 		//glPointSize(40.0f);						//Cada vertex te un tamany de 40 pixels 
