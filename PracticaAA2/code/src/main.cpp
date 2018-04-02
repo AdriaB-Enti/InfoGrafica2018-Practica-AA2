@@ -20,7 +20,7 @@ extern void GLcleanup();
 extern void GLrender(double currentTime);
 
 
-extern void myRenderCode(double currentTime);
+//extern void myRenderCode(double currentTime);
 //extern void myCleanupCode(void);
 //extern void myInitCode(void);
 
@@ -44,6 +44,8 @@ namespace {
 		prev_frametimestamp = SDL_GetTicks();
 	}
 }
+
+
 
 int main(int argc, char** argv) {
 	//Init GLFW
@@ -85,6 +87,9 @@ int main(int argc, char** argv) {
 	SDL_GL_SetSwapInterval(0);
 
 	int display_w, display_h;
+	float _square1X = 0.f;
+	float _square1Y = 1.f;
+	float _square1Z = 0.f;
 	SDL_GL_GetDrawableSize(mainwindow, &display_w, &display_h);
 	// Init scene
 	GLinit(display_w, display_h);
