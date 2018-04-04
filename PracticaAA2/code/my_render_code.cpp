@@ -49,9 +49,6 @@ glm::vec4 _square3 = { _square3X,_square3Y,_square3Z,_square3W };	//coordenadas 
 
 
 
-
-
-
 float _distanceWall = 0.2;											//Distancia entre el punto cental y las paredes 
 
 
@@ -87,6 +84,9 @@ namespace truncOctahedronShader{
 
 	GLuint ShaderRenderProgram;
 	GLuint ShaderVAO;
+
+	//glm::vec4 truncatedOctTest = _square1;
+	glm::vec4 truncatedOctTest = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 namespace RenderVars {
@@ -135,6 +135,7 @@ namespace Scene {
 		ImGui::Text("Truncated octahedrons");
 		ImGui::End();
 
+		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
 		truncOctahedronShader::ShaderRenderCode(currentTime);
 
 	}
@@ -165,22 +166,16 @@ void GLinit(int width, int height) {
 	glEnable(GL_CULL_FACE);
 	RV::_projection = glm::ortho(-10.f, 10.f, -10.f, 10.f, RV::zNear, RV::zFar);
 
-	//Box::setupCube();
-	//Axis::setupAxis();
-	//Cube::setupCube();
-
 	//lastWidth = width;
 	//lastHeight = height;
 
 	CubeShader::ShaderInitCode();					//Inicizlizar los shaders 
+	truncOctahedronShader::ShaderInitCode();
 }
 
 void GLcleanup() {
-	//Box::cleanupCube();
-	//Axis::cleanupAxis();
-	//Cube::cleanupCube();
-
 	CubeShader::ShaderCleanupCode();										
+	truncOctahedronShader::ShaderCleanupCode();
 }
 
 void GLrender(double currentTime) {
@@ -610,7 +605,7 @@ namespace truncOctahedronShader {
 		"#version 330\n\
 		\n\
 		void main(){ \n\
-		gl_Position = vec4(0,0,0,1);\n\
+			gl_Position = vec4(0,0,0,1);\n\
 		}"
 	};
 	static const GLchar * trOct_fragment_shader_source[] =
@@ -636,8 +631,66 @@ namespace truncOctahedronShader {
 	{
 		"#version 330\n\
 		\n\
+		uniform mat4 mvpMat;\n\
+		uniform vec4 centerPos;\n\
+		layout(triangles) in;																						\n\
+		layout(triangle_strip,max_vertices = 16) out;																\n\
 		void main(){ \n\
-		gl_Position = vec4(0,0,0,1);\n\
+			float sideLenght = 0.5;\n\
+			vec4 up = centerPos+vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
+			vec4 down = centerPos-vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
+			//Octahedron square:				\n\
+			vec4 a = centerPos+vec4( -sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
+			vec4 b = centerPos+vec4( sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
+			vec4 c = centerPos+vec4( sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
+			vec4 d = centerPos+vec4( -sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
+			\n\
+			\n\
+			vec4 aa = vec4( -0.4, 0.0, 0.5, 1.0);\n\
+			vec4 bb = vec4( -0.25, 0.35, 0.5, 1.0);\n\
+			vec4 cc = vec4( -0.25, -0.35, 0.5, 1.0);\n\
+			vec4 dd = vec4( 0.25, 0.35, 0.5, 1.0);\n\
+			vec4 ee = vec4( 0.25, -0.35, 0.5, 1.0);\n\
+			vec4 ff = vec4( 0.4, 0.0, 0.5, 1.0);\n\
+			gl_PrimitiveID = 0; \n\
+			gl_Position = aa;\n\
+			EmitVertex();\n\
+			gl_Position = cc;\n\
+			EmitVertex();\n\
+			gl_Position = bb;\n\
+			EmitVertex();\n\
+		gl_Position = ee; \n\
+		EmitVertex(); \n\
+		gl_Position = dd;\n\
+		EmitVertex();\n\
+		gl_Position = ff;\n\
+		EmitVertex();\n\
+		EndPrimitive();\n\
+				gl_PrimitiveID = 4; \n\
+				gl_Position = mvpMat*(a+(up-a)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(a+(b-a)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(a-up)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(b+(a-b)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(b-up)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(b+(up-b)/3);  \n\
+				EmitVertex();\n\
+				EndPrimitive();\n\
+				//Square	\n\
+				gl_PrimitiveID = 5; \n\
+				gl_Position = mvpMat*(a+(c-a)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(a+(down-a)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(a+(up-a)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(a+(b-a)/3);		\n\
+				EmitVertex();\n\
+				EndPrimitive();\n\
 		}"
 	};
 
@@ -656,8 +709,8 @@ namespace truncOctahedronShader {
 
 		GLuint program = glCreateProgram();
 		glAttachShader(program, vertex_shader);
-		glAttachShader(program, fragment_shader);
 		glAttachShader(program, geom_shader);
+		glAttachShader(program, fragment_shader);
 		glLinkProgram(program);
 
 		glDeleteShader(vertex_shader);
@@ -682,11 +735,21 @@ namespace truncOctahedronShader {
 
 		glUseProgram(ShaderRenderProgram);
 
-		//glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);
+		//glUniform1f(glGetUniformLocation(ShaderRenderProgram, "sideLenght"), (GLfloat)sideLenght);
+		glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), (GLfloat)truncatedOctTest.x, (GLfloat)truncatedOctTest.y, (GLfloat)truncatedOctTest.z, (GLfloat)truncatedOctTest.w);
 
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RV::_MVP));
+		/*glm::mat4 rot = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.f, 1.f, 0.f));
+		glm::mat4 myMVP = rot * myMVP;*/
 
-		glDrawArrays(GL_TRIANGLES, 0, 24);
+		glm::mat4 model = glm::mat4();
+		glm::mat4 view = glm::mat4();
+		glm::mat4 MVPmatrix = RV::_projection * view * model;
+		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
+
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
+
+
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 16);
 	}
 
 }
