@@ -634,8 +634,9 @@ namespace truncOctahedronShader {
 		uniform mat4 mvpMat;\n\
 		uniform vec4 centerPos;\n\
 		layout(triangles) in;																						\n\
-		layout(triangle_strip,max_vertices = 16) out;																\n\
+		layout(triangle_strip,max_vertices = 24) out;																\n\
 		void main(){ \n\
+			//Test hexagon \n\
 			float sideLenght = 0.5;\n\
 			vec4 up = centerPos+vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
 			vec4 down = centerPos-vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
@@ -666,6 +667,7 @@ namespace truncOctahedronShader {
 		gl_Position = ff;\n\
 		EmitVertex();\n\
 		EndPrimitive();\n\
+				//Truncated octahedron \n\
 				gl_PrimitiveID = 4; \n\
 				gl_Position = mvpMat*(a+(up-a)/3);  \n\
 				EmitVertex();\n\
@@ -682,13 +684,35 @@ namespace truncOctahedronShader {
 				EndPrimitive();\n\
 				//Square	\n\
 				gl_PrimitiveID = 5; \n\
-				gl_Position = mvpMat*(a+(c-a)/3);		\n\
+				gl_Position = mvpMat*(a+(d-a)/3);		\n\
 				EmitVertex();\n\
 				gl_Position = mvpMat*(a+(down-a)/3);		\n\
 				EmitVertex();\n\
 				gl_Position = mvpMat*(a+(up-a)/3);		\n\
 				EmitVertex();\n\
 				gl_Position = mvpMat*(a+(b-a)/3);		\n\
+				EmitVertex();\n\
+				EndPrimitive();\n\
+				//Top Square\n\
+				gl_PrimitiveID = 5; \n\
+				gl_Position = mvpMat*(up+(a-up)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(b-up)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(d-up)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(c-up)/3);		\n\
+				EmitVertex();\n\
+				EndPrimitive();\n\
+				//Bottom Square\n\
+				gl_PrimitiveID = 5; \n\
+				gl_Position = mvpMat*(down+(a-down)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(down+(d-down)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(down+(b-down)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(down+(c-down)/3);		\n\
 				EmitVertex();\n\
 				EndPrimitive();\n\
 		}"
@@ -745,11 +769,11 @@ namespace truncOctahedronShader {
 		glm::mat4 view = glm::mat4();
 		glm::mat4 MVPmatrix = RV::_projection * view * model;
 		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
-
+		//MVPmatrix = glm::rotate(MVPmatrix, glm::radians(-35.f), glm::vec3(1, 0, 0));  //per anar mirant com es veu amb diferents rotacions
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
 
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 16);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 24);
 	}
 
 }
