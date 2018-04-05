@@ -7,12 +7,15 @@
 #include <imgui\imgui.h>
 #include <iostream>
 #include <stdlib.h>
-
+#include <time.h>
 #include "GL_framework.h"
 
 //Global variables
 
-//Cubo 1
+//Cubo 1 
+const int MaxCubes = 6;
+glm::vec3 arrayCubes[MaxCubes];
+
 int _square1XRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
 float _square1X = _square1XRandom / 10000.0;			//ahora lo convierte en uno entre -0.2 y 0.2
 int _square1YRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
@@ -70,7 +73,7 @@ namespace CubeShader {
 	GLuint ShaderCompile();
 
 	void ShaderCleanupCode(void);
-	void ShaderRenderCode(double currentTime);
+	void ShaderRenderCode(double currentTime, int cubeN);
 
 	GLuint ShaderRenderProgram;
 	GLuint ShaderVAO;
@@ -127,8 +130,9 @@ namespace Scene {
 		ImGui::Text("Cubes");
 		ImGui::End();
 
-		CubeShader::ShaderRenderCode(currentTime);												//Renderizar los shaders
-
+		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
+			CubeShader::ShaderRenderCode(currentTime, cubeN);												//Renderizar los shaders
+		}
 	}
 
 	void renderScene2(double currentTime) {
@@ -159,6 +163,7 @@ namespace Scene {
 }
 
 void GLinit(int width, int height) {
+	srand(time(NULL));																				//The random numbers are diferent from each one 
 	glViewport(0, 0, width, height);
 	glClearColor(0.2f, 0.2f, 0.2f, 1.f);
 	glClearDepth(1.f);
@@ -169,8 +174,31 @@ void GLinit(int width, int height) {
 
 	//lastWidth = width;
 	//lastHeight = height;
+	glm::vec3 arrayCubes[MaxCubes];
+	//Inicializacion para crear las posiciones randoms 
+	int _squareXRandom;				
+	float _squareX;			
+	int _squareYRandom;
+	float _squareY;
+	int _squareZRandom;
+	float _squareZ;
 
-	CubeShader::ShaderInitCode();					//Inicizlizar los shaders 
+	for (int i = 0; i < MaxCubes; i++) {
+		//Las posiciones X se hacen randoms 
+		_squareXRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
+		_squareX = _square1XRandom / 10000.0;				//ahora lo convierte en uno entre -0.2 y 0.2
+		arrayCubes[i].x = _squareX;
+		//Posiciones Y randoms 
+		_squareYRandom = rand() % 4000 - 2000;				
+		_squareY = _squareYRandom / 10000.0;
+		arrayCubes[i].y = _squareY;
+		//Posiciones Z randoms
+		_squareZRandom = rand() % 4000 - 2000;
+		_squareZ = _squareZRandom / 10000.0;
+		arrayCubes[i].z = _squareZ;
+	}
+
+	CubeShader::ShaderInitCode();					//Inicializar los shaders 
 	truncOctahedronShader::ShaderInitCode();
 }
 
@@ -218,6 +246,7 @@ namespace CubeShader {
 	{
 		"#version 330\n\
 		\n\
+		uniform vec3 cube; \n\
 		void main(){ \n\
 		const vec4 square1[3] = vec4[3](vec4(0.25,-0.25,0.5,1.0),\n\
 									vec4(0.25,0.25,0.5,1.0),\n\
@@ -456,8 +485,8 @@ namespace CubeShader {
 					EndPrimitive();																					\n\
 					counterCubes++;																					\n\
 				}\n\
-																			\n\
-				if(counterCubes == 2){										\n\
+																														\n\
+				if(counterCubes == 2){																					\n\
 					for(int i = 0; i < 4; i++){																		\n\
 						gl_Position = mvpMat * mvpMatSquare3 * square3[i] + falling;												\n\
 						gl_PrimitiveID = 0;																			\n\
@@ -554,12 +583,14 @@ namespace CubeShader {
 	glm::mat4 myMVPsquare2;					
 	glm::mat4 myMVPsquare3;
 
-	void ShaderRenderCode(double currentTime) {
+	void ShaderRenderCode(double currentTime, int cubeN) {
 		const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
 		glClearBufferfv(GL_COLOR, 0, color);
 
 		glUseProgram(ShaderRenderProgram);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)currentTime);
+		
+		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cube"), (GLfloat)arrayCubes[cubeN].x, (GLfloat)arrayCubes[cubeN].y, (GLfloat)arrayCubes[cubeN].z);
 
 		//Cubo 1
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "square1X"), (GLfloat)_square1[0]);				//E1. Pasamos las varibales de las seed al geom_shader
@@ -599,7 +630,6 @@ namespace CubeShader {
 	}
 
 }
-
 namespace truncOctahedronShader {
 	static const GLchar * trOct_vertex_shader_source[] =
 	{
