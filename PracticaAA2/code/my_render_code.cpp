@@ -634,7 +634,7 @@ namespace truncOctahedronShader {
 		uniform mat4 mvpMat;\n\
 		uniform vec4 centerPos;\n\
 		layout(triangles) in;																						\n\
-		layout(triangle_strip,max_vertices = 52) out;																\n\
+		layout(triangle_strip,max_vertices = 76) out;																\n\
 		void main(){ \n\
 			float sideLenght = 0.5;\n\
 			vec4 up = centerPos+vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
@@ -673,7 +673,7 @@ namespace truncOctahedronShader {
 					gl_PrimitiveID = i;												\n\
 					vec4 left	= bottomVertex[i];				//a,b,c,d			\n\
 					vec4 right	= bottomVertex[i+1];			//b,c,d,a			\n\
-					//----Hexagon													\n\
+					//----Top Hexagon													\n\
 					gl_Position = mvpMat*(left+(up-left)/3);						\n\
 					EmitVertex();													\n\
 					gl_Position = mvpMat*(left+(right-left)/3);						\n\
@@ -701,6 +701,7 @@ namespace truncOctahedronShader {
 					gl_Position = mvpMat*(squareCenter+(squareRight-squareCenter)/3);		\n\
 					EmitVertex();															\n\
 					EndPrimitive();															\n\
+					//----Bottom Hexagon													\n\
 				}\n\
 				//Top Square\n\
 				gl_PrimitiveID = 5; \n\
@@ -782,7 +783,7 @@ namespace truncOctahedronShader {
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
 
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 52);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 76);
 	}
 
 }
