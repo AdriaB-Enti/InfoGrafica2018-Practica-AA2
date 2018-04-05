@@ -86,6 +86,7 @@ namespace truncOctahedronShader{
 	GLuint ShaderVAO;
 
 	//glm::vec4 truncatedOctTest = _square1;
+	glm::vec4 tOctPositions[5] = {};
 	glm::vec4 truncatedOctTest = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
@@ -636,36 +637,15 @@ namespace truncOctahedronShader {
 		layout(triangles) in;																						\n\
 		layout(triangle_strip,max_vertices = 76) out;																\n\
 		void main(){ \n\
-			float sideLenght = 0.5;\n\
+			float sideLenght = 0.5;													\n\
+			//																		\n\
 			vec4 up = centerPos+vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
-			vec4 down = centerPos-vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
+			vec4 down = centerPos-vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);		\n\
 			//Octahedron square:				\n\
 			vec4 a = centerPos+vec4( -sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
 			vec4 b = centerPos+vec4( sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
 			vec4 c = centerPos+vec4( sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
 			vec4 d = centerPos+vec4( -sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
-			\n\
-			//Test hexagon \n\
-			vec4 aa = vec4( -0.4, 0.0, 0.5, 1.0);\n\
-			vec4 bb = vec4( -0.25, 0.35, 0.5, 1.0);\n\
-			vec4 cc = vec4( -0.25, -0.35, 0.5, 1.0);\n\
-			vec4 dd = vec4( 0.25, 0.35, 0.5, 1.0);\n\
-			vec4 ee = vec4( 0.25, -0.35, 0.5, 1.0);\n\
-			vec4 ff = vec4( 0.4, 0.0, 0.5, 1.0);\n\
-			/*gl_PrimitiveID = 0; \n\
-			gl_Position = aa;\n\
-			EmitVertex();\n\
-			gl_Position = cc;\n\
-			EmitVertex();\n\
-			gl_Position = bb;\n\
-			EmitVertex();\n\
-			gl_Position = ee; \n\
-			EmitVertex(); \n\
-			gl_Position = dd;\n\
-			EmitVertex();\n\
-			gl_Position = ff;\n\
-			EmitVertex();\n\
-			EndPrimitive();*/\n\
 				//Truncated octahedron \n\
 				gl_PrimitiveID = 4; \n\
 				vec4 bottomVertex[5] = vec4[5](a,b,c,d,a);							\n\
@@ -728,7 +708,6 @@ namespace truncOctahedronShader {
 				EmitVertex();\n\
 				EndPrimitive();\n\
 				//----Bottom Square\n\
-				gl_PrimitiveID = 5; \n\
 				gl_Position = mvpMat*(down+(a-down)/3);		\n\
 				EmitVertex();\n\
 				gl_Position = mvpMat*(down+(d-down)/3);		\n\
