@@ -634,7 +634,7 @@ namespace truncOctahedronShader {
 		uniform mat4 mvpMat;\n\
 		uniform vec4 centerPos;\n\
 		layout(triangles) in;																						\n\
-		layout(triangle_strip,max_vertices = 24) out;																\n\
+		layout(triangle_strip,max_vertices = 28) out;																\n\
 		void main(){ \n\
 			//Test hexagon \n\
 			float sideLenght = 0.5;\n\
@@ -680,6 +680,21 @@ namespace truncOctahedronShader {
 				gl_Position = mvpMat*(up+(b-up)/3);  \n\
 				EmitVertex();\n\
 				gl_Position = mvpMat*(b+(up-b)/3);  \n\
+				EmitVertex();\n\
+				EndPrimitive();\n\
+				//Right hegaxon \n\
+				gl_PrimitiveID = 2; \n\
+				gl_Position = mvpMat*(b+(up-b)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(b+(c-b)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(b-up)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(c+(b-c)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(c-up)/3);  \n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(c+(up-c)/3);  \n\
 				EmitVertex();\n\
 				EndPrimitive();\n\
 				//Square	\n\
@@ -769,11 +784,11 @@ namespace truncOctahedronShader {
 		glm::mat4 view = glm::mat4();
 		glm::mat4 MVPmatrix = RV::_projection * view * model;
 		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
-		//MVPmatrix = glm::rotate(MVPmatrix, glm::radians(-35.f), glm::vec3(1, 0, 0));  //per anar mirant com es veu amb diferents rotacions
+		MVPmatrix = glm::rotate(MVPmatrix, glm::radians(-35.f), glm::vec3(0, 1, 0));  //per anar mirant com es veu amb diferents rotacions
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
 
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 24);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 28);
 	}
 
 }
