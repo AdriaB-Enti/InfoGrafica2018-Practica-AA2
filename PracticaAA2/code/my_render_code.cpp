@@ -634,9 +634,8 @@ namespace truncOctahedronShader {
 		uniform mat4 mvpMat;\n\
 		uniform vec4 centerPos;\n\
 		layout(triangles) in;																						\n\
-		layout(triangle_strip,max_vertices = 28) out;																\n\
+		layout(triangle_strip,max_vertices = 52) out;																\n\
 		void main(){ \n\
-			//Test hexagon \n\
 			float sideLenght = 0.5;\n\
 			vec4 up = centerPos+vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
 			vec4 down = centerPos-vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
@@ -646,68 +645,63 @@ namespace truncOctahedronShader {
 			vec4 c = centerPos+vec4( sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
 			vec4 d = centerPos+vec4( -sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
 			\n\
-			\n\
+			//Test hexagon \n\
 			vec4 aa = vec4( -0.4, 0.0, 0.5, 1.0);\n\
 			vec4 bb = vec4( -0.25, 0.35, 0.5, 1.0);\n\
 			vec4 cc = vec4( -0.25, -0.35, 0.5, 1.0);\n\
 			vec4 dd = vec4( 0.25, 0.35, 0.5, 1.0);\n\
 			vec4 ee = vec4( 0.25, -0.35, 0.5, 1.0);\n\
 			vec4 ff = vec4( 0.4, 0.0, 0.5, 1.0);\n\
-			gl_PrimitiveID = 0; \n\
+			/*gl_PrimitiveID = 0; \n\
 			gl_Position = aa;\n\
 			EmitVertex();\n\
 			gl_Position = cc;\n\
 			EmitVertex();\n\
 			gl_Position = bb;\n\
 			EmitVertex();\n\
-		gl_Position = ee; \n\
-		EmitVertex(); \n\
-		gl_Position = dd;\n\
-		EmitVertex();\n\
-		gl_Position = ff;\n\
-		EmitVertex();\n\
-		EndPrimitive();\n\
+			gl_Position = ee; \n\
+			EmitVertex(); \n\
+			gl_Position = dd;\n\
+			EmitVertex();\n\
+			gl_Position = ff;\n\
+			EmitVertex();\n\
+			EndPrimitive();*/\n\
 				//Truncated octahedron \n\
 				gl_PrimitiveID = 4; \n\
-				gl_Position = mvpMat*(a+(up-a)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(a+(b-a)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(up+(a-up)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(b+(a-b)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(up+(b-up)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(b+(up-b)/3);  \n\
-				EmitVertex();\n\
-				EndPrimitive();\n\
-				//Right hegaxon \n\
-				gl_PrimitiveID = 2; \n\
-				gl_Position = mvpMat*(b+(up-b)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(b+(c-b)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(up+(b-up)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(c+(b-c)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(up+(c-up)/3);  \n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(c+(up-c)/3);  \n\
-				EmitVertex();\n\
-				EndPrimitive();\n\
-				//Square	\n\
-				gl_PrimitiveID = 5; \n\
-				gl_Position = mvpMat*(a+(d-a)/3);		\n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(a+(down-a)/3);		\n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(a+(up-a)/3);		\n\
-				EmitVertex();\n\
-				gl_Position = mvpMat*(a+(b-a)/3);		\n\
-				EmitVertex();\n\
-				EndPrimitive();\n\
+				vec4 bottomVertex[5] = vec4[5](a,b,c,d,a);							\n\
+				for(int i=0;i<4;i++){												\n\
+					gl_PrimitiveID = i;												\n\
+					vec4 left	= bottomVertex[i];				//a,b,c,d			\n\
+					vec4 right	= bottomVertex[i+1];			//b,c,d,a			\n\
+					//----Hexagon													\n\
+					gl_Position = mvpMat*(left+(up-left)/3);						\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(left+(right-left)/3);						\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(up+(left-up)/3);							\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(right+(left-right)/3);					\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(up+(right-up)/3);							\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(right+(up-right)/3);						\n\
+					EmitVertex();													\n\
+					EndPrimitive();													\n\
+					//----Bottom left square										\n\
+					vec4 squareCenter	= left;					//a,b,c,d			\n\
+					vec4 squareRight	= right;				//b,c,d,a			\n\
+					vec4 squareLeft	= bottomVertex[(3+i)%4];	//d,a,b,c			\n\
+					gl_PrimitiveID = 5;												\n\
+					gl_Position = mvpMat*(squareCenter+(squareLeft-squareCenter)/3);		\n\
+					EmitVertex();															\n\
+					gl_Position = mvpMat*(squareCenter+(down-squareCenter)/3);				\n\
+					EmitVertex();															\n\
+					gl_Position = mvpMat*(squareCenter+(up-squareCenter)/3);				\n\
+					EmitVertex();															\n\
+					gl_Position = mvpMat*(squareCenter+(squareRight-squareCenter)/3);		\n\
+					EmitVertex();															\n\
+					EndPrimitive();															\n\
+				}\n\
 				//Top Square\n\
 				gl_PrimitiveID = 5; \n\
 				gl_Position = mvpMat*(up+(a-up)/3);		\n\
@@ -784,11 +778,11 @@ namespace truncOctahedronShader {
 		glm::mat4 view = glm::mat4();
 		glm::mat4 MVPmatrix = RV::_projection * view * model;
 		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
-		MVPmatrix = glm::rotate(MVPmatrix, glm::radians(-35.f), glm::vec3(0, 1, 0));  //per anar mirant com es veu amb diferents rotacions
+		MVPmatrix = glm::rotate(MVPmatrix, glm::radians(135.f), glm::vec3(0, 1, 0));  //per anar mirant com es veu amb diferents rotacions
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
 
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 28);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 52);
 	}
 
 }
