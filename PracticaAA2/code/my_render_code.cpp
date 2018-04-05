@@ -86,8 +86,8 @@ namespace truncOctahedronShader{
 	GLuint ShaderVAO;
 
 	//glm::vec4 truncatedOctTest = _square1;
-	glm::vec4 tOctPositions[5] = {};
-	glm::vec4 truncatedOctTest = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 tOctPositions[5] = { glm::vec4(30.0f, 30.0f, -30.0f, 1.0f) };
+	glm::vec4 truncatedOctTest = glm::vec4(30.0f, 30.0f, -30.0f, 1.0f);
 }
 
 namespace RenderVars {
@@ -639,13 +639,13 @@ namespace truncOctahedronShader {
 		void main(){ \n\
 			float sideLenght = 0.5;													\n\
 			//																		\n\
-			vec4 up = centerPos+vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
-			vec4 down = centerPos-vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);		\n\
+			vec4 up = vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
+			vec4 down = vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);		\n\
 			//Octahedron square:				\n\
-			vec4 a = centerPos+vec4( -sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
-			vec4 b = centerPos+vec4( sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
-			vec4 c = centerPos+vec4( sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
-			vec4 d = centerPos+vec4( -sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
+			vec4 a = vec4( -sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
+			vec4 b = vec4( sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
+			vec4 c = vec4( sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
+			vec4 d = vec4( -sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
 				//Truncated octahedron \n\
 				gl_PrimitiveID = 4; \n\
 				vec4 bottomVertex[5] = vec4[5](a,b,c,d,a);							\n\
@@ -762,16 +762,18 @@ namespace truncOctahedronShader {
 		glUseProgram(ShaderRenderProgram);
 
 		//glUniform1f(glGetUniformLocation(ShaderRenderProgram, "sideLenght"), (GLfloat)sideLenght);
-		glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), (GLfloat)truncatedOctTest.x, (GLfloat)truncatedOctTest.y, (GLfloat)truncatedOctTest.z, (GLfloat)truncatedOctTest.w);
+		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), (GLfloat)truncatedOctTest.x, (GLfloat)truncatedOctTest.y, (GLfloat)truncatedOctTest.z, (GLfloat)truncatedOctTest.w);
+		glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), 0, 0, 0, 1);
 
 		/*glm::mat4 rot = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.f, 1.f, 0.f));
 		glm::mat4 myMVP = rot * myMVP;*/
 
-		glm::mat4 model = glm::mat4();
+		
+		glm::mat4 model = glm::translate(glm::mat4(), glm::vec3(truncatedOctTest.x, truncatedOctTest.y, truncatedOctTest.z));
 		glm::mat4 view = glm::mat4();
 		glm::mat4 MVPmatrix = RV::_projection * view * model;
 		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
-		MVPmatrix = glm::rotate(MVPmatrix, glm::radians(135.f), glm::vec3(1, 0, 0));  //per anar mirant com es veu amb diferents rotacions
+		//MVPmatrix = glm::rotate(MVPmatrix, glm::radians(135.f), glm::vec3(1, 0, 0));  //per anar mirant com es veu amb diferents rotacions
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
 
