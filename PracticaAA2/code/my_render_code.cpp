@@ -669,8 +669,8 @@ namespace truncOctahedronShader {
 		void main(){ \n\
 			float sideLenght = 0.5;													\n\
 			//																		\n\
-			vec4 up = vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);			\n\
-			vec4 down = vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 0.0);		\n\
+			vec4 up = vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 1.0);			\n\
+			vec4 down = vec4(0.0, -sqrt(2)*sideLenght/2, 0.0, 1.0);		\n\
 			//Octahedron square:				\n\
 			vec4 a = vec4( -sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
 			vec4 b = vec4( sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
@@ -803,7 +803,7 @@ namespace truncOctahedronShader {
 		glm::mat4 view = glm::mat4();
 		glm::mat4 MVPmatrix = RV::_projection * view * model;
 		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
-		//MVPmatrix = glm::rotate(MVPmatrix, glm::radians(135.f), glm::vec3(1, 0, 0));  //per anar mirant com es veu amb diferents rotacions
+		//MVPmatrix = glm::rotate(MVPmatrix, glm::radians(35.f), glm::vec3(0, 1, 0));  //per anar mirant com es veu amb diferents rotacions
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
 
