@@ -83,14 +83,17 @@ namespace truncOctahedronShader{
 	void ShaderInitCode();
 	GLuint ShaderCompile();
 	void ShaderCleanupCode(void);
-	void ShaderRenderCode(double currentTime);
+	void ShaderRenderCode(double currentTime, bool wireframe);
 
 	GLuint ShaderRenderProgram;
+	GLuint WireframeShaderRenderProgram;
 	GLuint ShaderVAO;
+	GLuint WireframeShaderVAO;
 
 	//glm::vec4 truncatedOctTest = _square1;
 	glm::vec4 tOctPositions[5] = { glm::vec4(30.0f, 30.0f, -30.0f, 1.0f) };
 	glm::vec4 truncatedOctTest = glm::vec4(30.0f, 30.0f, -30.0f, 1.0f);
+	float sideLenght = 0.5f;
 }
 
 namespace RenderVars {
@@ -141,7 +144,7 @@ namespace Scene {
 		ImGui::End();
 
 		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
-		truncOctahedronShader::ShaderRenderCode(currentTime);
+		truncOctahedronShader::ShaderRenderCode(currentTime,false);
 
 	}
 
@@ -663,14 +666,14 @@ namespace truncOctahedronShader {
 		"#version 330\n\
 		\n\
 		uniform mat4 mvpMat;\n\
-		uniform vec4 centerPos;\n\
+		uniform float sideLenght;\n\
 		layout(triangles) in;																						\n\
 		layout(triangle_strip,max_vertices = 76) out;																\n\
 		void main(){ \n\
-			float sideLenght = 0.5;													\n\
+			//float sideLenght = 0.5;													\n\
 			//																		\n\
-			vec4 up = vec4(0.0, sqrt(2)*sideLenght/2, 0.0, 1.0);			\n\
-			vec4 down = vec4(0.0, -sqrt(2)*sideLenght/2, 0.0, 1.0);		\n\
+			vec4 up = vec4(0.0, sqrt(2)*sideLenght/2.0, 0.0, 1.0);			\n\
+			vec4 down = vec4(0.0, -sqrt(2)*sideLenght/2.0, 0.0, 1.0);		\n\
 			//Octahedron square:				\n\
 			vec4 a = vec4( -sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
 			vec4 b = vec4( sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
@@ -750,13 +753,115 @@ namespace truncOctahedronShader {
 		}"
 	};
 
-	GLuint	ShaderCompile() {
+
+	//trunc. oct. geom shader -- line_strip
+	static const GLchar * trOct_geom_wireframe_shader_source[] =
+	{
+		"#version 330\n\
+		\n\
+		uniform mat4 mvpMat;\n\
+		uniform float sideLenght;\n\
+		layout(triangles) in;																						\n\
+		layout(line_strip,max_vertices = 76) out;																\n\
+		void main(){ \n\
+			//float sideLenght = 0.5;													\n\
+			//																		\n\
+			vec4 up = vec4(0.0, sqrt(2)*sideLenght/2.0, 0.0, 1.0);			\n\
+			vec4 down = vec4(0.0, -sqrt(2)*sideLenght/2.0, 0.0, 1.0);		\n\
+			//Octahedron square:				\n\
+			vec4 a = vec4( -sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
+			vec4 b = vec4( sideLenght/2, 0.0, sideLenght/2, 1.0);\n\
+			vec4 c = vec4( sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
+			vec4 d = vec4( -sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
+				//Truncated octahedron \n\
+				gl_PrimitiveID = 4; \n\
+				vec4 bottomVertex[5] = vec4[5](a,b,c,d,a);							\n\
+				for(int i=0;i<4;i++){												\n\
+					gl_PrimitiveID = i;												\n\
+					vec4 left	= bottomVertex[i];				//a,b,c,d			\n\
+					vec4 right	= bottomVertex[i+1];			//b,c,d,a			\n\
+					//----Top Hexagons												\n\
+					gl_Position = mvpMat*(left+(up-left)/3);						\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(left+(right-left)/3);						\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(up+(left-up)/3);							\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(right+(left-right)/3);					\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(up+(right-up)/3);							\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(right+(up-right)/3);						\n\
+					EmitVertex();													\n\
+					EndPrimitive();													\n\
+					//----Bottom Hexagons											\n\
+					gl_Position = mvpMat*(left+(down-left)/3);						\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(down+(left-down)/3);						\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(left+(right-left)/3);						\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(down+(right-down)/3);						\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(right+(left-right)/3);					\n\
+					EmitVertex();													\n\
+					gl_Position = mvpMat*(right+(down-right)/3);					\n\
+					EmitVertex();													\n\
+					EndPrimitive();													\n\
+					//----Bottom left squares										\n\
+					vec4 squareCenter	= left;					//a,b,c,d			\n\
+					vec4 squareRight	= right;				//b,c,d,a			\n\
+					vec4 squareLeft	= bottomVertex[(3+i)%4];	//d,a,b,c			\n\
+					gl_PrimitiveID = 5;												\n\
+					gl_Position = mvpMat*(squareCenter+(squareLeft-squareCenter)/3);		\n\
+					EmitVertex();															\n\
+					gl_Position = mvpMat*(squareCenter+(down-squareCenter)/3);				\n\
+					EmitVertex();															\n\
+					gl_Position = mvpMat*(squareCenter+(up-squareCenter)/3);				\n\
+					EmitVertex();															\n\
+					gl_Position = mvpMat*(squareCenter+(squareRight-squareCenter)/3);		\n\
+					EmitVertex();															\n\
+					EndPrimitive();															\n\
+				}\n\
+				//----Top Square\n\
+				gl_PrimitiveID = 5; \n\
+				gl_Position = mvpMat*(up+(a-up)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(b-up)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(d-up)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(up+(c-up)/3);		\n\
+				EmitVertex();\n\
+				EndPrimitive();\n\
+				//----Bottom Square\n\
+				gl_Position = mvpMat*(down+(a-down)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(down+(d-down)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(down+(b-down)/3);		\n\
+				EmitVertex();\n\
+				gl_Position = mvpMat*(down+(c-down)/3);		\n\
+				EmitVertex();\n\
+				EndPrimitive();\n\
+		}"
+	};
+
+
+	GLuint	ShaderCompile(bool wireframe) {
 		GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(vertex_shader, 1, trOct_vertex_shader_source, NULL);
 		glCompileShader(vertex_shader);
 
 		GLuint geom_shader = glCreateShader(GL_GEOMETRY_SHADER);
-		glShaderSource(geom_shader, 1, trOct_geom_shader_source, NULL);
+		if (!wireframe)
+		{
+			glShaderSource(geom_shader, 1, trOct_geom_shader_source, NULL);
+		}
+		else {
+			glShaderSource(geom_shader, 1, trOct_geom_wireframe_shader_source, NULL);
+		}
+
 		glCompileShader(geom_shader);
 
 		GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -777,23 +882,27 @@ namespace truncOctahedronShader {
 	}
 
 	void ShaderInitCode() {
-		ShaderRenderProgram = ShaderCompile();
+		ShaderRenderProgram = ShaderCompile(false);
 		glCreateVertexArrays(1, &ShaderVAO);
 		glBindVertexArray(ShaderVAO);
+		//wireframe
 	}
 	void ShaderCleanupCode(void) {
 		glDeleteVertexArrays(1, &ShaderVAO);
 		glBindVertexArray(ShaderRenderProgram);
 	}
-	void ShaderRenderCode(double currentTime) {
+	void ShaderRenderCode(double currentTime, bool wireframe) {
 		const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
 		glClearBufferfv(GL_COLOR, 0, color);
 
-		glUseProgram(ShaderRenderProgram);
+		if (!wireframe)
+			glUseProgram(ShaderRenderProgram);
+		else
+			//usar el programa sense els wireframes
 
-		//glUniform1f(glGetUniformLocation(ShaderRenderProgram, "sideLenght"), (GLfloat)sideLenght);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "sideLenght"), (GLfloat)sideLenght);
 		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), (GLfloat)truncatedOctTest.x, (GLfloat)truncatedOctTest.y, (GLfloat)truncatedOctTest.z, (GLfloat)truncatedOctTest.w);
-		glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), 0, 0, 0, 1);
+		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), 0, 0, 0, 1);
 
 		/*glm::mat4 rot = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.f, 1.f, 0.f));
 		glm::mat4 myMVP = rot * myMVP;*/
@@ -803,11 +912,12 @@ namespace truncOctahedronShader {
 		glm::mat4 view = glm::mat4();
 		glm::mat4 MVPmatrix = RV::_projection * view * model;
 		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
-		//MVPmatrix = glm::rotate(MVPmatrix, glm::radians(35.f), glm::vec3(0, 1, 0));  //per anar mirant com es veu amb diferents rotacions
+		MVPmatrix = glm::rotate(MVPmatrix, glm::radians(35.f), glm::vec3(1, 1, 0));  //per anar mirant com es veu amb diferents rotacions
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
-
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 76);
+		//glDrawArrays(GL_LINE_LOOP, 0, 76);
 	}
 
 }
