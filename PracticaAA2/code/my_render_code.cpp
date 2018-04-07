@@ -95,6 +95,7 @@ namespace truncOctahedronShader{
 	glm::vec4 tOctPositions[5] = { glm::vec4(30.0f, 30.0f, -30.0f, 1.0f) };
 	glm::vec4 truncatedOctTest = glm::vec4(30.0f, 30.0f, -30.0f, 1.0f);
 	float sideLenght = 0.5f;
+	float rotationAngleOct = 0.0f;
 }
 
 namespace RenderVars {
@@ -316,7 +317,7 @@ namespace CubeShader {
 			uniform float distanceWall;																					\n\
 			\n\
 			layout(triangles) in;																						\n\
-			layout(lin_strip,max_vertices = 48) out;																\n\
+			layout(triangle_strip,max_vertices = 48) out;																\n\
 																														\n\
 			void main(){																								\n\
 																														\n\
@@ -693,13 +694,13 @@ namespace truncOctahedronShader {
 		glCompileShader(vertex_shader);
 
 		GLuint geom_shader = glCreateShader(GL_GEOMETRY_SHADER);
-		/*if (!wireframe)
-		{*/
+		if (!wireframe)
+		{
 			glShaderSource(geom_shader, 1, trOct_geom_shader_source, NULL);
-	/*	}
+		}
 		else {
 			glShaderSource(geom_shader, 1, trOct_geom_wireframe_shader_source, NULL);
-		}*/
+		}
 
 		glCompileShader(geom_shader);
 
@@ -725,12 +726,22 @@ namespace truncOctahedronShader {
 		glCreateVertexArrays(1, &ShaderVAO);
 		glBindVertexArray(ShaderVAO);
 		//wireframe
+		WireframeShaderRenderProgram = ShaderCompile(true);
+		glCreateVertexArrays(1, &WireframeShaderVAO);
+		glBindVertexArray(WireframeShaderVAO);
 	}
 	void ShaderCleanupCode(void) {
 		glDeleteVertexArrays(1, &ShaderVAO);
 		glBindVertexArray(ShaderRenderProgram);
+		//wireframe
+
 	}
 	void ShaderRenderCode(double currentTime, bool wireframe) {
+		
+		//Debug
+		rotationAngleOct = currentTime*50;
+
+
 		const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
 		glClearBufferfv(GL_COLOR, 0, color);
 
@@ -751,10 +762,10 @@ namespace truncOctahedronShader {
 		glm::mat4 view = glm::mat4();
 		glm::mat4 MVPmatrix = RV::_projection * view * model;
 		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
-		MVPmatrix = glm::rotate(MVPmatrix, glm::radians(35.f), glm::vec3(1, 1, 0));  //per anar mirant com es veu amb diferents rotacions
+		MVPmatrix = glm::rotate(MVPmatrix, glm::radians(rotationAngleOct), glm::vec3(1, 1, 0));  //per anar mirant com es veu amb diferents rotacions
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //not the best way
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 76);
 		//glDrawArrays(GL_LINE_LOOP, 0, 76);
 	}
