@@ -82,7 +82,7 @@ namespace CubeShader {
 
 namespace truncOctahedronShader{
 	void ShaderInitCode();
-	GLuint ShaderCompile();
+	GLuint ShaderCompile(bool wireframe);
 	void ShaderCleanupCode(void);
 	void ShaderRenderCode(double currentTime, bool wireframe);
 
@@ -693,13 +693,13 @@ namespace truncOctahedronShader {
 		glCompileShader(vertex_shader);
 
 		GLuint geom_shader = glCreateShader(GL_GEOMETRY_SHADER);
-		if (!wireframe)
-		{
+		/*if (!wireframe)
+		{*/
 			glShaderSource(geom_shader, 1, trOct_geom_shader_source, NULL);
-		}
+	/*	}
 		else {
 			glShaderSource(geom_shader, 1, trOct_geom_wireframe_shader_source, NULL);
-		}
+		}*/
 
 		glCompileShader(geom_shader);
 
@@ -734,9 +734,9 @@ namespace truncOctahedronShader {
 		const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
 		glClearBufferfv(GL_COLOR, 0, color);
 
-		if (!wireframe)
+		/*if (!wireframe)*/
 			glUseProgram(ShaderRenderProgram);
-		else
+		/*else*/
 			//usar el programa sense els wireframes
 
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "sideLenght"), (GLfloat)sideLenght);
