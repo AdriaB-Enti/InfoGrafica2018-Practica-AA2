@@ -65,11 +65,12 @@ namespace Scene {
 	int currentScene = 1;	//1, 2, 3...
 	void renderScene1(double currentTime);
 	void renderScene2(double currentTime);
+	void renderScene6(double currentTime);
 	void detectInput();
 }
 
 namespace CubeShader {
-	
+
 	void ShaderInitCode();
 	GLuint ShaderCompile();
 
@@ -80,7 +81,7 @@ namespace CubeShader {
 	GLuint ShaderVAO;
 }
 
-namespace truncOctahedronShader{
+namespace truncOctahedronShader {
 	void ShaderInitCode();
 	GLuint ShaderCompile(bool wireframe);
 	void ShaderCleanupCode(void);
@@ -146,7 +147,16 @@ namespace Scene {
 		ImGui::End();
 
 		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
-		truncOctahedronShader::ShaderRenderCode(currentTime,false);
+		truncOctahedronShader::ShaderRenderCode(currentTime, false);
+
+	}
+	void renderScene6(double currentTime) {
+		ImGui::Begin("Scene #6");
+		ImGui::Text("Truncated octahedrons:\nDrawing wireframes");
+		ImGui::End();
+
+		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
+		truncOctahedronShader::ShaderRenderCode(currentTime, true);
 
 	}
 
@@ -162,6 +172,9 @@ namespace Scene {
 			}
 			if (io.KeysDown[51] && Scene::currentScene != 3) {		// Key 3
 				Scene::currentScene = 3;
+			}
+			if (io.KeysDown[54] && Scene::currentScene != 6) {		// Key 6
+				Scene::currentScene = 6;
 			}
 		}
 	}
@@ -246,9 +259,11 @@ void GLrender(double currentTime) {
 		break;
 	case 2: Scene::renderScene2(currentTime);
 		break;
-	/*
-	case 3: Scene::renderScene3();
+		/*
+		case 3: Scene::renderScene3();
 		break;*/
+	case 6: Scene::renderScene6(currentTime);
+		break;
 	default: //Shouldn't happen
 		break;
 	}
@@ -614,10 +629,10 @@ namespace truncOctahedronShader {
 			vec4 c = vec4( sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
 			vec4 d = vec4( -sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
 				//Truncated octahedron \n\
-				gl_PrimitiveID = 4; \n\
+				gl_PrimitiveID = 1; \n\
 				vec4 bottomVertex[5] = vec4[5](a,b,c,d,a);							\n\
 				for(int i=0;i<4;i++){												\n\
-					gl_PrimitiveID = i;												\n\
+					//gl_PrimitiveID = i;												\n\
 					vec4 left	= bottomVertex[i];				//a,b,c,d			\n\
 					vec4 right	= bottomVertex[i+1];			//b,c,d,a			\n\
 					//----Top Hexagons												\n\
@@ -652,7 +667,7 @@ namespace truncOctahedronShader {
 					vec4 squareCenter	= left;					//a,b,c,d			\n\
 					vec4 squareRight	= right;				//b,c,d,a			\n\
 					vec4 squareLeft	= bottomVertex[(3+i)%4];	//d,a,b,c			\n\
-					gl_PrimitiveID = 5;												\n\
+					//gl_PrimitiveID = 5;												\n\
 					gl_Position = mvpMat*(squareCenter+(squareLeft-squareCenter)/3);		\n\
 					EmitVertex();															\n\
 					gl_Position = mvpMat*(squareCenter+(down-squareCenter)/3);				\n\
@@ -664,7 +679,7 @@ namespace truncOctahedronShader {
 					EndPrimitive();															\n\
 				}\n\
 				//----Top Square\n\
-				gl_PrimitiveID = 5; \n\
+				//gl_PrimitiveID = 5; \n\
 				gl_Position = mvpMat*(up+(a-up)/3);		\n\
 				EmitVertex();\n\
 				gl_Position = mvpMat*(up+(b-up)/3);		\n\
@@ -737,33 +752,35 @@ namespace truncOctahedronShader {
 
 	}
 	void ShaderRenderCode(double currentTime, bool wireframe) {
-		
+
 		//Debug
-		rotationAngleOct = currentTime*50;
+		rotationAngleOct = currentTime * 50;
 
 
 		const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
 		glClearBufferfv(GL_COLOR, 0, color);
 
-		/*if (!wireframe)*/
-			glUseProgram(ShaderRenderProgram);
-		/*else*/
-			//usar el programa sense els wireframes
+		GLuint currentProgram = wireframe ? WireframeShaderRenderProgram : ShaderRenderProgram;
 
-		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "sideLenght"), (GLfloat)sideLenght);
+		/*if (!wireframe)*/
+		glUseProgram(currentProgram);
+		/*else*/
+		//usar el programa sense els wireframes
+
+		glUniform1f(glGetUniformLocation(currentProgram, "sideLenght"), (GLfloat)sideLenght);
 		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), (GLfloat)truncatedOctTest.x, (GLfloat)truncatedOctTest.y, (GLfloat)truncatedOctTest.z, (GLfloat)truncatedOctTest.w);
 		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), 0, 0, 0, 1);
 
 		/*glm::mat4 rot = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.f, 1.f, 0.f));
 		glm::mat4 myMVP = rot * myMVP;*/
 
-		
+
 		glm::mat4 model = glm::translate(glm::mat4(), glm::vec3(truncatedOctTest.x, truncatedOctTest.y, truncatedOctTest.z));
 		glm::mat4 view = glm::mat4();
 		glm::mat4 MVPmatrix = RV::_projection * view * model;
 		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
 		MVPmatrix = glm::rotate(MVPmatrix, glm::radians(rotationAngleOct), glm::vec3(1, 1, 0));  //per anar mirant com es veu amb diferents rotacions
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
+		glUniformMatrix4fv(glGetUniformLocation(currentProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //not the best way
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 76);
@@ -772,4 +789,4 @@ namespace truncOctahedronShader {
 
 }
 
-//TODO: els compileShader i linkProgram que tinguin les seves propies funcions (està a l'altre pràctica)
+//TODO: els compileShader i linkProgram que tinguin les seves propies funcions (estï¿½ a l'altre prï¿½ctic
