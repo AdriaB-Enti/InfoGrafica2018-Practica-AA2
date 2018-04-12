@@ -10,12 +10,20 @@
 #include <time.h>
 #include "GL_framework.h"
 
+
 //Global variables
 
 //Cubo 1 
-const int MaxCubes = 6;
-glm::vec3 arrayCubes[MaxCubes];
+const int MaxCubes = 7;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
+namespace randomPositions {
+	glm::vec3 arrayCubes[MaxCubes];
+
+}
 glm::vec3 rotationCubes[MaxCubes];
+
+float min = -0.5f;										//Minimum and maximum values of the random 
+float max =	0.5f;
+
 
 int _square1XRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
 float _square1X = _square1XRandom / 10000.0;			//ahora lo convierte en uno entre -0.2 y 0.2
@@ -52,8 +60,7 @@ glm::vec4 _square3 = { _square3X,_square3Y,_square3Z,_square3W };	//coordenadas 
 
 
 
-
-float _distanceWall = 0.2;											//Distancia entre el punto cental y las paredes 
+float _distanceWall = 0.07;											//Distancia entre el punto cental y las paredes 
 
 
 //Forward declarations
@@ -95,7 +102,7 @@ namespace truncOctahedronShader {
 	//glm::vec4 truncatedOctTest = _square1;
 	glm::vec4 tOctPositions[5] = { glm::vec4(30.0f, 30.0f, -30.0f, 1.0f) };
 	glm::vec4 truncatedOctTest = glm::vec4(30.0f, 30.0f, -30.0f, 1.0f);
-	float sideLenght = 0.5f;
+	float sideLenght = 0.3f;
 	float rotationAngleOct = 0.0f;
 }
 
@@ -147,6 +154,7 @@ namespace Scene {
 		ImGui::End();
 
 		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
+		truncOctahedronShader::ShaderRenderCode(currentTime, false);
 		truncOctahedronShader::ShaderRenderCode(currentTime, false);
 
 	}
@@ -203,17 +211,20 @@ void GLinit(int width, int height) {
 
 	for (int i = 0; i < MaxCubes; i++) {
 		//Las posiciones X se hacen randoms 
-		_squareXRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
-		_squareX = _square1XRandom / 10000.0;				//ahora lo convierte en uno entre -0.2 y 0.2
-		arrayCubes[i].x = _squareX;
+		_squareXRandom = (rand() % 8000) - 4000;				//produce un numero entre -2000 - +2000
+		//_squareX = _square1XRandom / 10000.0f;				//ahora lo convierte en uno entre -0.2 y 0.2
+		_squareX = (rand()%100) / 100.0f;				//ahora lo convierte en uno entre -0.2 y 0.2
+		randomPositions::arrayCubes[i].x = _squareX;
 		//Posiciones Y randoms 
 		_squareYRandom = rand() % 4000 - 2000;				
-		_squareY = _squareYRandom / 10000.0;
-		arrayCubes[i].y = _squareY;
+		//_squareY = _squareYRandom / 10000.0;
+		_squareY = ((rand() % 100)-50) / 100.0f;
+		randomPositions::arrayCubes[i].y = _squareY;
 		//Posiciones Z randoms
 		_squareZRandom = rand() % 4000 - 2000;
-		_squareZ = _squareZRandom / 10000.0;
-		arrayCubes[i].z = _squareZ;
+		//_squareZ = _squareZRandom / 10000.0;
+		_squareZ = ((rand() % 100) - 50) / 100.0f;
+		randomPositions::arrayCubes[i].z = _squareZ;
 	}
 
 	int _squareXRotationRandom;							//Los cubos deben rotar, para ello, hay que crear un numero aletarorio entre 0 y 1 
@@ -235,9 +246,6 @@ void GLinit(int width, int height) {
 		rotationCubes[i] = glm::vec3(1.f, 1.f, 1.f);
 		//std::cout << ((float)rand())/40000.f<< std::endl;				//Imprimir los randoms. De esta forma, se puede controlar mucho mejor los resultados 
 
-		/*std::cout << rotationCubes[i].x << std::endl;
-		std::cout << rotationCubes[i].y << std::endl;
-		std::cout << rotationCubes[i].z << std::endl;*/
 	}
 	
 
@@ -465,13 +473,12 @@ namespace CubeShader {
 	glm::mat4 myMVPsquare3;
 
 	void ShaderRenderCode(double currentTime, int cubeN) {
-		const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
-		glClearBufferfv(GL_COLOR, 0, color);
+		/*const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
+		glClearBufferfv(GL_COLOR, 0, color);*/
 
 		glUseProgram(ShaderRenderProgram);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)currentTime);
-		
-		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)arrayCubes[cubeN].x, (GLfloat)arrayCubes[cubeN].y, (GLfloat)arrayCubes[cubeN].z);
+		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)randomPositions::arrayCubes[cubeN].x, (GLfloat)randomPositions::arrayCubes[cubeN].y, (GLfloat)randomPositions::arrayCubes[cubeN].z);
 
 		//Cubo 1
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);			//rotationCubes[cubeN]
@@ -720,9 +727,6 @@ namespace truncOctahedronShader {
 		//Debug
 		rotationAngleOct = currentTime * 50;
 
-
-		const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
-		glClearBufferfv(GL_COLOR, 0, color);
 
 		GLuint currentProgram = wireframe ? WireframeShaderRenderProgram : ShaderRenderProgram;
 
