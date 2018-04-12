@@ -9,12 +9,13 @@
 #include <stdlib.h>
 #include <time.h>
 #include "GL_framework.h"
+#include <vector>
 
 
 //Global variables
 
 //Cubo 1 
-const int MaxCubes = 7;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
+const int MaxCubes = 10;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
 namespace randomPositions {
 	glm::vec3 arrayCubes[MaxCubes];
 
@@ -62,6 +63,10 @@ glm::vec4 _square3 = { _square3X,_square3Y,_square3Z,_square3W };	//coordenadas 
 
 float _distanceWall = 0.07;											//Distancia entre el punto cental y las paredes 
 
+namespace arrangedCubes {
+	std::vector<glm::vec3> arrangedPositions;
+	void arrangeCubes();
+}
 
 //Forward declarations
 namespace ImGui {
@@ -92,7 +97,7 @@ namespace truncOctahedronShader {
 	void ShaderInitCode();
 	GLuint ShaderCompile(bool wireframe);
 	void ShaderCleanupCode(void);
-	void ShaderRenderCode(double currentTime, bool wireframe);
+	void ShaderRenderCode(double currentTime, bool wireframe, glm::vec3 otruncOctPos);
 
 	GLuint ShaderRenderProgram;
 	GLuint WireframeShaderRenderProgram;
@@ -154,9 +159,11 @@ namespace Scene {
 		ImGui::End();
 
 		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
-		truncOctahedronShader::ShaderRenderCode(currentTime, false);
-		truncOctahedronShader::ShaderRenderCode(currentTime, false);
+		for (int i = 0; i < arrangedCubes::arrangedPositions.size(); i++)
+		{
+			truncOctahedronShader::ShaderRenderCode(currentTime, false, arrangedCubes::arrangedPositions.at(i));
 
+		}
 	}
 	void renderScene6(double currentTime) {
 		ImGui::Begin("Scene #6");
@@ -164,7 +171,7 @@ namespace Scene {
 		ImGui::End();
 
 		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
-		truncOctahedronShader::ShaderRenderCode(currentTime, true);
+		truncOctahedronShader::ShaderRenderCode(currentTime, true, truncOctahedronShader::truncatedOctTest);
 
 	}
 
@@ -176,6 +183,7 @@ namespace Scene {
 				Scene::currentScene = 1;
 			}
 			if (io.KeysDown[50] && Scene::currentScene != 2) {		// Key 2
+				arrangedCubes::arrangeCubes();
 				Scene::currentScene = 2;
 			}
 			if (io.KeysDown[51] && Scene::currentScene != 3) {		// Key 3
@@ -291,6 +299,47 @@ void GLResize(int width, int height) {
 			RV::_projection = glm::perspective(RV::FOV, (float)width / (float)height, RV::zNear, RV::zFar);
 	}
 	else { RV::_projection = glm::perspective(RV::FOV, 0.f, RV::zNear, RV::zFar); }
+}
+
+namespace arrangedCubes {
+	void arrangeCubes() {
+		//place the cubes from bottom to top
+		int sideCubes = 1;
+		while (sideCubes*sideCubes*sideCubes < MaxCubes)	//find out whats the smallest formation of cubes
+		{
+			sideCubes++;
+		}
+
+		float startPos = -(_distanceWall / 2)*(sideCubes - 1);
+		
+		
+		//controlar de no posar més cubs que Max cubes
+		//usar el arrangedPositions.size()
+
+		for (int z = 0; z < sideCubes; z++)
+		{
+			if (arrangedPositions.size() == MaxCubes)
+				break;
+			for (int y = 0; y < sideCubes; y++)
+			{
+				if (arrangedPositions.size() == MaxCubes)
+					break;
+				for (int x = 0; x < sideCubes; x++)
+				{
+					//_distanceWall
+					glm::vec3 newCubePostion = glm::vec3(startPos+x*_distanceWall,startPos+y*_distanceWall,startPos+z*_distanceWall);
+					arrangedPositions.push_back(newCubePostion);
+					std::cout << "cubeLattice" << newCubePostion.x << " " << newCubePostion.y << " " << newCubePostion.z << "\n";
+					if (arrangedPositions.size()==MaxCubes)
+					{
+						break;
+					}
+				}
+			}
+		}
+		std::cout << "S'han col·locat un total de " << arrangedPositions.size() << std::endl;
+
+	}
 }
 
 
@@ -722,7 +771,8 @@ namespace truncOctahedronShader {
 		glBindVertexArray(WireframeShaderRenderProgram);
 
 	}
-	void ShaderRenderCode(double currentTime, bool wireframe) {
+	void ShaderRenderCode(double currentTime, bool wireframe, glm::vec3 otruncOctPos) {
+		//canviar els truncatedOctTest per octruncOctPos
 
 		//Debug
 		rotationAngleOct = currentTime * 50;
