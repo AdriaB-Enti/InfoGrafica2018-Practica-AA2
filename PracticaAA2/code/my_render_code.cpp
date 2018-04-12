@@ -87,6 +87,7 @@ namespace Scene {
 	int currentScene = 1;	//1, 2, 3...
 	void renderScene1(double currentTime);
 	void renderScene2(double currentTime);
+	void renderScene3(double currentTime);
 	void renderScene6(double currentTime);
 	void detectInput();
 }
@@ -323,8 +324,7 @@ void GLrender(double currentTime) {
 		break;
 	case 2: Scene::renderScene2(currentTime);
 		break;
-	
-		case 3: Scene::renderScene1(currentTime);
+	case 3: Scene::renderScene3(currentTime);
 		break;
 	case 6: Scene::renderScene6(currentTime);
 		break;
