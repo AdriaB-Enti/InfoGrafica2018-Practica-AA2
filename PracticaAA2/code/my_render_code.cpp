@@ -11,6 +11,8 @@
 #include "GL_framework.h"
 #include <vector>
 
+#include "glm/ext.hpp"		//Libreria para imprimir con cout vec3 y mat4 
+
 
 //Global variables
 
@@ -18,9 +20,15 @@
 const int MaxCubes = 10;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
 namespace randomPositions {
 	glm::vec3 arrayCubes[MaxCubes];
-
 }
-glm::vec3 rotationCubes[MaxCubes];
+//Namespace para las rotaciones de los cubos 
+namespace rotationCubes {
+	glm::vec3 arrayRotationCubes[MaxCubes];
+}
+//Namespace para los valores de la Y cuando deban caer o no 
+namespace Fall {
+	glm::vec3 fallingCubes[MaxCubes];
+}
 
 float min = -0.5f;										//Minimum and maximum values of the random 
 float max =	0.5f;
@@ -235,27 +243,37 @@ void GLinit(int width, int height) {
 		randomPositions::arrayCubes[i].z = _squareZ;
 	}
 
+
 	int _squareXRotationRandom;							//Los cubos deben rotar, para ello, hay que crear un numero aletarorio entre 0 y 1 
 	float _squareXRotation;
 	int _squareYRotationRandom;							
 	float _squareYRotation;
 	int _squareZRotationRandom;
 	float _squareZRotation;
+
 	for (int i = 0; i < MaxCubes; i++) {
 		_squareXRotationRandom = rand() % 1000 + 1000;					//Creo numero entre 0 y 1000
 		_squareXRotation = _squareXRotationRandom / 2000;		//El aleatorio esta entre 0 y 1
-		rotationCubes[i].x = ((float)rand()) / 40000.f;
+		rotationCubes::arrayRotationCubes[i].x = ((float)rand()) / 40000.f;
 		_squareYRotationRandom = rand() % 1000 + 1000;
 		_squareYRotation = _squareYRotationRandom / 2000;		
-		rotationCubes[i].y = ((float)rand()) / 40000.f;
+		rotationCubes::arrayRotationCubes[i].y = ((float)rand()) / 40000.f;
 		_squareZRotationRandom = rand() % 1000 + 1000;
 		_squareZRotation = ((float)rand()) / 40000.f;
-		rotationCubes[i].z = _squareZRotation;
-		rotationCubes[i] = glm::vec3(1.f, 1.f, 1.f);
+		rotationCubes::arrayRotationCubes[i].z = _squareZRotation;
+		//std::cout << rotationCubes::arrayRotationCubes[i].x << std::endl;
+		//std::cout << rotationCubes::arrayRotationCubes[i].y << std::endl;
+		//std::cout << rotationCubes::arrayRotationCubes[i].z << std::endl;
+		//rotationCubes::arrayRotationCubes[i] = glm::vec3(1.f, 1.f, 1.f);
 		//std::cout << ((float)rand())/40000.f<< std::endl;				//Imprimir los randoms. De esta forma, se puede controlar mucho mejor los resultados 
 
 	}
-	
+
+	for (int i = 0; i < MaxCubes; i++) {
+		Fall::fallingCubes[MaxCubes].x = 0.f;
+		Fall::fallingCubes[MaxCubes].y = 0.f;
+		Fall::fallingCubes[MaxCubes].z = 0.f;
+	}
 
 	CubeShader::ShaderInitCode();					//Inicializar los shaders 
 	truncOctahedronShader::ShaderInitCode();
@@ -376,7 +394,39 @@ namespace CubeShader {
 		}"
 	};
 
+	//vec4 square[24] = vec4[24](vec4(distanceWall, -distanceWall, distanceWall, 1.0) + vec4(cubes.x, cubes.y, cubes.z, 0.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	\n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	\n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	\n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	\n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	\n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0));				\n\
 
+
+
+	//-(time/555)
 	static const GLchar * cube_geom_shader_source[] =
 	{ "#version 330																										\n\
 			uniform float time;																							\n\
@@ -388,79 +438,79 @@ namespace CubeShader {
 			\n\
 			uniform float distanceWall;																					\n\
 			\n\
+			uniform vec3 falling;																						\n\
 			layout(triangles) in;																						\n\
 			layout(triangle_strip,max_vertices = 48) out;																\n\
 																														\n\
 			void main(){																								\n\
 																														\n\
-				vec4 falling = vec4(0.0,-(time/555),0.0,0.0);																	\n\
-				vec4 square[24]=vec4[24](vec4(distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z,  1.0),			\n\
-										vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z,  1.0),				\n\
-										vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z,  1.0),			\n\
-										vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z,  1.0),				\n\
-																																				\n\
-										vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z,  1.0),				\n\
-										vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),				\n\
-										vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z,  1.0),				\n\
-										vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),			\n\
-																																				\n\
-										vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z,  1.0),			\n\
-										vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z,  1.0),				\n\
-										vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),			\n\
-										vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),			\n\
-																																				\n\
-										vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),			\n\
-										vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),			\n\
-										vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),			\n\
-										vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),				\n\
-																																				\n\
-										vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z,  1.0),			\n\
-										vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),			\n\
-										vec4(distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z,  1.0),				\n\
-										vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),			\n\
-																																				\n\
-										vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0),			\n\
-										vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z,  1.0),				\n\
-										vec4(distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z,  1.0),				\n\
-										vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z,  1.0));				\n\
+				vec4 square[24]=vec4[24](vec4(distanceWall, -distanceWall, distanceWall,  1.0),							\n\
+										vec4(distanceWall, distanceWall, distanceWall,  1.0),							\n\
+										vec4(-distanceWall, -distanceWall, distanceWall,  1.0),							\n\
+										vec4(-distanceWall, distanceWall, distanceWall,  1.0),							\n\
+																														\n\
+										vec4(distanceWall, distanceWall, distanceWall,  1.0),							\n\
+										vec4(distanceWall, distanceWall, -distanceWall,  1.0),							\n\
+										vec4(-distanceWall, distanceWall, distanceWall,  1.0),							\n\
+										vec4(-distanceWall, distanceWall, -distanceWall,  1.0),							\n\
+																														\n\
+										vec4(-distanceWall, -distanceWall, distanceWall,  1.0),							\n\
+										vec4(-distanceWall, distanceWall, distanceWall,  1.0),							\n\
+										vec4(-distanceWall, -distanceWall, -distanceWall,  1.0),						\n\
+										vec4(-distanceWall, distanceWall, -distanceWall,  1.0),							\n\
+																														\n\
+										vec4(-distanceWall, -distanceWall, -distanceWall,  1.0),						\n\
+										vec4(-distanceWall, distanceWall, -distanceWall,  1.0),							\n\
+										vec4(distanceWall, -distanceWall, -distanceWall,  1.0),							\n\
+										vec4(distanceWall, distanceWall, -distanceWall,  1.0),							\n\
+																														\n\
+										vec4(-distanceWall, -distanceWall, distanceWall,  1.0),							\n\
+										vec4(-distanceWall, -distanceWall, -distanceWall,  1.0),						\n\
+										vec4(distanceWall, -distanceWall, distanceWall,  1.0),							\n\
+										vec4(distanceWall, -distanceWall, -distanceWall,  1.0),							\n\
+																														\n\
+										vec4(distanceWall, -distanceWall, -distanceWall, 1.0),							\n\
+										vec4(distanceWall, distanceWall, -distanceWall,  1.0),							\n\
+										vec4(distanceWall, -distanceWall, distanceWall,  1.0),							\n\
+										vec4(distanceWall, distanceWall, distanceWall,  1.0));							\n\
 					\n\
 					\n\
-					for(int i = 0; i < 4; i++){																		\n\
-						gl_Position = mvpMat * (AxisSquare * (square[i] + falling));															\n\
-						gl_PrimitiveID = 0;																			\n\
-						EmitVertex();																				\n\
-					}																								\n\
-					EndPrimitive();																					\n\
-					for(int i = 4; i < 8; i++){																		\n\
-						gl_Position = mvpMat * (AxisSquare * (square[i] + falling));															\n\
-						gl_PrimitiveID = 1;																			\n\
-						EmitVertex();																				\n\
-					}																								\n\
-					EndPrimitive();																					\n\
-					for(int i = 8; i < 12; i++){																	\n\
-						gl_Position = mvpMat * (AxisSquare * (square[i] + falling));															\n\
-						gl_PrimitiveID = 2;																			\n\
-						EmitVertex();																				\n\
-					}																								\n\
-					EndPrimitive();																					\n\
-					for(int i = 12; i < 16; i++){																	\n\
-						gl_Position = mvpMat * (AxisSquare * (square[i] + falling));															\n\
-						gl_PrimitiveID = 3;																			\n\
-						EmitVertex();																				\n\
-					}																								\n\
-					EndPrimitive();																					\n\
-					for(int i = 16; i < 20; i++){																	\n\
-						gl_Position = mvpMat* (AxisSquare * (square[i] + falling));															\n\
-						gl_PrimitiveID = 4;																			\n\
-						EmitVertex();																				\n\
-					}																								\n\
-					EndPrimitive();																					\n\
-					for(int i = 20; i < 24; i++){																	\n\
-						gl_Position = mvpMat * (AxisSquare * (square[i] + falling));															\n\
-						gl_PrimitiveID = 5;																			\n\
-						EmitVertex();																				\n\
-					}																								\n\
-					EndPrimitive();																					\n\
+					for(int i = 0; i < 4; i++){																			\n\
+						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
+						gl_PrimitiveID = 0;																				\n\
+						EmitVertex();																					\n\
+					}																									\n\
+					EndPrimitive();																						\n\
+					for(int i = 4; i < 8; i++){																			\n\
+						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
+						gl_PrimitiveID = 1;																				\n\
+						EmitVertex();																					\n\
+					}																									\n\
+					EndPrimitive();																						\n\
+					for(int i = 8; i < 12; i++){																		\n\
+						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
+						gl_PrimitiveID = 2;																				\n\
+						EmitVertex();																					\n\
+					}																									\n\
+					EndPrimitive();																						\n\
+					for(int i = 12; i < 16; i++){																		\n\
+						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
+						gl_PrimitiveID = 3;																				\n\
+						EmitVertex();																					\n\
+					}																									\n\
+					EndPrimitive();																						\n\
+					for(int i = 16; i < 20; i++){																		\n\
+						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
+						gl_PrimitiveID = 4;																				\n\
+						EmitVertex();																					\n\
+					}																									\n\
+					EndPrimitive();																						\n\
+					for(int i = 20; i < 24; i++){																		\n\
+						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
+						gl_PrimitiveID = 5;																				\n\
+						EmitVertex();																					\n\
+					}																									\n\
+					EndPrimitive();																						\n\
 																			\n\
 				\n\
 			}" };
@@ -521,6 +571,9 @@ namespace CubeShader {
 	glm::mat4 myMVPsquare2;					
 	glm::mat4 myMVPsquare3;
 
+
+
+	float rotation_angle;
 	void ShaderRenderCode(double currentTime, int cubeN) {
 		/*const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
 		glClearBufferfv(GL_COLOR, 0, color);*/
@@ -530,12 +583,20 @@ namespace CubeShader {
 		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)randomPositions::arrayCubes[cubeN].x, (GLfloat)randomPositions::arrayCubes[cubeN].y, (GLfloat)randomPositions::arrayCubes[cubeN].z);
 
 		//Cubo 1
-		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);			//rotationCubes[cubeN]
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);			//distancia de las paredes respecto a la seed 
+		
+		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "falling"), (GLfloat)Fall::fallingCubes[cubeN].x, (GLfloat)Fall::fallingCubes[cubeN].y, (GLfloat)Fall::fallingCubes[cubeN].z);				//Caida de los cubos 
 
-		glm::mat4 rotSquare = glm::rotate(glm::mat4(), 0.01f, rotationCubes[cubeN]);												//E3. Con esto, se hace que la matriz rote.
-		myMVPsquare = rotSquare * myMVPsquare;																						//E3. Para aplicar la transformacion
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(myMVPsquare));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
 
+		glm::mat4 rotSquare;
+		rotation_angle += 0.01f;
+		rotSquare = glm::rotate(glm::mat4(), rotation_angle, rotationCubes::arrayRotationCubes[cubeN]);										//E3. Con esto, se hace que la matriz rote.
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(rotSquare));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
+		//myMVPsquare = myMVPsquare * rotSquare;																						//E3. Para aplicar la transformacion
+		//glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(myMVPsquare));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
+		
+		
+		//std::cout << glm::to_string(rotationCubes::arrayRotationCubes[cubeN]) << std::endl;
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RV::_MVP));			//La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
 
 		
