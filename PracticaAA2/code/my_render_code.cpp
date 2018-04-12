@@ -70,6 +70,8 @@ glm::vec4 _square3 = { _square3X,_square3Y,_square3Z,_square3W };	//coordenadas 
 
 
 float _distanceWall = 0.07;											//Distancia entre el punto cental y las paredes 
+float rotation_angle = 0.f;												//Variable, con la que podemos rotar los cubos a cierta velocidad 
+bool CubeCanRotate = false;											//Si el cubo puede rotar
 
 namespace arrangedCubes {
 	std::vector<glm::vec3> arrangedPositions;
@@ -95,7 +97,7 @@ namespace CubeShader {
 	GLuint ShaderCompile();
 
 	void ShaderCleanupCode(void);
-	void ShaderRenderCode(double currentTime, int cubeN);
+	void ShaderRenderCode(double currentTime, int cubeN, float rotation_angle);
 
 	GLuint ShaderRenderProgram;
 	GLuint ShaderVAO;
@@ -157,7 +159,8 @@ namespace Scene {
 		ImGui::End();
 
 		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
-			CubeShader::ShaderRenderCode(currentTime, cubeN);												//Renderizar los shaders
+			CubeShader::ShaderRenderCode(currentTime, cubeN, 0.f);												//Renderizar los shaders. 0.f es rotation_angle
+			
 		}
 	}
 
@@ -173,6 +176,19 @@ namespace Scene {
 
 		}
 	}
+
+	void renderScene3(double currentTime) {
+		ImGui::Begin("Scene #3");
+		ImGui::Text("Cubes");
+		ImGui::End();
+
+		rotation_angle += 0.01f;
+		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
+			CubeShader::ShaderRenderCode(currentTime, cubeN, rotation_angle);												//Renderizar los shaders. 0.f es rotation_angle
+			
+		}
+	}
+
 	void renderScene6(double currentTime) {
 		ImGui::Begin("Scene #6");
 		ImGui::Text("Truncated octahedrons:\nDrawing wireframes");
@@ -189,16 +205,30 @@ namespace Scene {
 		if (!io.WantCaptureKeyboard) {
 			if (io.KeysDown[49] && Scene::currentScene != 1) {		// Key 1
 				Scene::currentScene = 1;
+				for (int i = 0; i < MaxCubes; i++) {
+					Fall::fallingCubes[MaxCubes].y = 0.f;
+				}
 			}
 			if (io.KeysDown[50] && Scene::currentScene != 2) {		// Key 2
 				arrangedCubes::arrangeCubes();
 				Scene::currentScene = 2;
+				for (int i = 0; i < MaxCubes; i++) {
+					Fall::fallingCubes[MaxCubes].y = 0.f;
+				}
 			}
 			if (io.KeysDown[51] && Scene::currentScene != 3) {		// Key 3
 				Scene::currentScene = 3;
+				for (int i = 0; i < MaxCubes; i++) {
+					Fall::fallingCubes[MaxCubes].y -= 0.01f;
+
+				}
 			}
 			if (io.KeysDown[54] && Scene::currentScene != 6) {		// Key 6
 				Scene::currentScene = 6;
+				for (int i = 0; i < MaxCubes; i++) {
+					Fall::fallingCubes[MaxCubes].y = 0.f;
+
+				}
 			}
 		}
 	}
@@ -271,7 +301,7 @@ void GLinit(int width, int height) {
 
 	for (int i = 0; i < MaxCubes; i++) {
 		Fall::fallingCubes[MaxCubes].x = 0.f;
-		Fall::fallingCubes[MaxCubes].y = 0.f;
+		Fall::fallingCubes[MaxCubes].y = 0.5f;
 		Fall::fallingCubes[MaxCubes].z = 0.f;
 	}
 
@@ -293,9 +323,9 @@ void GLrender(double currentTime) {
 		break;
 	case 2: Scene::renderScene2(currentTime);
 		break;
-		/*
-		case 3: Scene::renderScene3();
-		break;*/
+	
+		case 3: Scene::renderScene1(currentTime);
+		break;
 	case 6: Scene::renderScene6(currentTime);
 		break;
 	default: //Shouldn't happen
@@ -573,15 +603,15 @@ namespace CubeShader {
 
 
 
-	float rotation_angle;
-	void ShaderRenderCode(double currentTime, int cubeN) {
+	
+	void ShaderRenderCode(double currentTime, int cubeN, float rotation_angle) {
 		/*const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
 		glClearBufferfv(GL_COLOR, 0, color);*/
 
 		glUseProgram(ShaderRenderProgram);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)currentTime);
 		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)randomPositions::arrayCubes[cubeN].x, (GLfloat)randomPositions::arrayCubes[cubeN].y, (GLfloat)randomPositions::arrayCubes[cubeN].z);
-
+		std::cout << currentTime << std::endl;
 		//Cubo 1
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);			//distancia de las paredes respecto a la seed 
 		
@@ -589,8 +619,12 @@ namespace CubeShader {
 
 
 		glm::mat4 rotSquare;
-		rotation_angle += 0.01f;
+		/*if (CubeCanRotate) {
+			rotation_angle += 0.01f;
+		}
+		else rotation_angle = 0.f;*/
 		rotSquare = glm::rotate(glm::mat4(), rotation_angle, rotationCubes::arrayRotationCubes[cubeN]);										//E3. Con esto, se hace que la matriz rote.
+		
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(rotSquare));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
 		//myMVPsquare = myMVPsquare * rotSquare;																						//E3. Para aplicar la transformacion
 		//glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(myMVPsquare));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
