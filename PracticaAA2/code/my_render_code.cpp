@@ -69,7 +69,7 @@ glm::vec4 _square3 = { _square3X,_square3Y,_square3Z,_square3W };	//coordenadas 
 
 
 
-float _distanceWall = 0.07;											//Distancia entre el punto cental y las paredes 
+float _distanceWall = 0.07;	//0.07										//Distancia entre el punto cental y las paredes 
 float rotation_angle = 0.f;												//Variable, con la que podemos rotar los cubos a cierta velocidad 
 bool CubeCanRotate = false;											//Si el cubo puede rotar
 
@@ -99,6 +99,7 @@ namespace CubeShader {
 
 	void ShaderCleanupCode(void);
 	void ShaderRenderCode(double currentTime, int cubeN, float rotation_angle);
+	void renderCubeInPos(glm::vec3 position, float rotation_angle, float sideLenght);
 
 	GLuint ShaderRenderProgram;
 	GLuint ShaderVAO;
@@ -117,8 +118,8 @@ namespace truncOctahedronShader {
 
 	//glm::vec4 truncatedOctTest = _square1;
 	glm::vec4 tOctPositions[5] = { glm::vec4(30.0f, 30.0f, -30.0f, 1.0f) };
-	glm::vec4 truncatedOctTest = glm::vec4(30.0f, 30.0f, -30.0f, 1.0f);
-	float sideLenght = 0.3f;
+	glm::vec4 truncatedOctTest = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	float sideLenght = 1.2f;
 	float rotationAngleOct = 0.0f;
 }
 
@@ -129,7 +130,7 @@ namespace RenderVars {
 	float currentFOV = FOV;
 
 	glm::mat4 _projection;
-	glm::mat4 _modelView;
+	glm::mat4 _view;
 	glm::mat4 _MVP;
 	glm::mat4 _inv_modelview;
 	glm::vec4 _cameraPoint;
@@ -170,11 +171,11 @@ namespace Scene {
 		ImGui::Text("Truncated octahedrons");
 		ImGui::End();
 
-		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
 		for (int i = 0; i < arrangedCubes::arrangedPositions.size(); i++)
 		{
-			truncOctahedronShader::ShaderRenderCode(currentTime, false, arrangedCubes::arrangedPositions.at(i));
-
+			//std::cout << arrangedCubes::arrangedPositions.at(i).x << "," << arrangedCubes::arrangedPositions.at(i).y << "," << arrangedCubes::arrangedPositions.at(i).z << std::endl;
+			//truncOctahedronShader::ShaderRenderCode(currentTime, false, arrangedCubes::arrangedPositions.at(i));
+			CubeShader::renderCubeInPos(arrangedCubes::arrangedPositions.at(i), 0, _distanceWall);
 		}
 	}
 
@@ -199,7 +200,7 @@ namespace Scene {
 		truncOctahedronShader::ShaderRenderCode(currentTime, true, truncOctahedronShader::truncatedOctTest);
 
 	}
-
+	
 	//Detect keyboard input to change scene
 	void detectInput() {
 		ImGuiIO& io = ImGui::GetIO();
@@ -243,7 +244,9 @@ void GLinit(int width, int height) {
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	RV::_projection = glm::ortho(-10.f, 10.f, -10.f, 10.f, RV::zNear, RV::zFar);
+	RV::_view = glm::lookAt(glm::vec3(0, 0, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	//RV::_projection = glm::ortho(-5.f, 5.f, -5.f, 5.f, RV::zNear, RV::zFar);
+	RV::_projection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), 0.1f, 10.0f);
 
 	//lastWidth = width;
 	//lastHeight = height;
@@ -353,17 +356,17 @@ namespace arrangedCubes {
 	void arrangeCubes() {
 		//place the cubes from bottom to top
 		int sideCubes = 1;
-		while (sideCubes*sideCubes*sideCubes < MaxCubes)	//find out whats the smallest formation of cubes
+		while (sideCubes*sideCubes*sideCubes < MaxCubes)	//find out whats the smallest formation of cubes. Calculates how much cubes need to be per side
 		{
 			sideCubes++;
 		}
 
-		float startPos = -(_distanceWall / 2)*(sideCubes - 1);
+		float startPos = -(_distanceWall / 2)*(sideCubes - 1);		//starting position (bottom-left, back corner) - distance to center of the lattice
 		
-		
+
 		//controlar de no posar més cubs que Max cubes
 		//usar el arrangedPositions.size()
-
+		std::cout << "cubeLattic of " << sideCubes << " sides and " << MaxCubes << " cubes:\n";
 		for (int z = 0; z < sideCubes; z++)
 		{
 			if (arrangedPositions.size() == MaxCubes)
@@ -611,7 +614,7 @@ namespace CubeShader {
 		glUseProgram(ShaderRenderProgram);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)currentTime);
 		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)randomPositions::arrayCubes[cubeN].x, (GLfloat)randomPositions::arrayCubes[cubeN].y, (GLfloat)randomPositions::arrayCubes[cubeN].z);
-		std::cout << currentTime << std::endl;
+		//std::cout << currentTime << std::endl;
 		//Cubo 1
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);			//distancia de las paredes respecto a la seed 
 		
@@ -638,6 +641,22 @@ namespace CubeShader {
 		glDrawArrays(GL_TRIANGLES, 0, 24);		//Compte, es POINTS, no POINT. El 3 es que dibuixa 3 punts 
 	}
 
+	void renderCubeInPos(glm::vec3 position, float rotation_angle, float sideLenght) {
+		glUseProgram(ShaderRenderProgram);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)0);
+		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)position.x, (GLfloat)position.y, (GLfloat)position.z);
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)sideLenght);
+		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "falling"), (GLfloat)0, (GLfloat)0, (GLfloat)0);
+		glm::mat4 rotSquare;
+		//rotSquare = glm::rotate(glm::mat4(), rotation_angle, glm::vec3(0));	//can be changed if needed
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(rotSquare));
+
+		//model position and rotation are already in the shader...
+		glm::mat4 MVPmatrix = RV::_projection * RV::_view;
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
+
+		glDrawArrays(GL_TRIANGLES, 0, 24);
+	}
 }
 namespace truncOctahedronShader {
 	static const GLchar * trOct_vertex_shader_source[] =
@@ -884,12 +903,15 @@ namespace truncOctahedronShader {
 		/*glm::mat4 rot = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.f, 1.f, 0.f));
 		glm::mat4 myMVP = rot * myMVP;*/
 
-
-		glm::mat4 model = glm::translate(glm::mat4(), glm::vec3(truncatedOctTest.x, truncatedOctTest.y, truncatedOctTest.z));
-		glm::mat4 view = glm::mat4();
-		glm::mat4 MVPmatrix = RV::_projection * view * model;
-		MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
-		MVPmatrix = glm::rotate(MVPmatrix, glm::radians(rotationAngleOct), glm::vec3(1, 1, 0));  //per anar mirant com es veu amb diferents rotacions
+		
+		glm::mat4 model = glm::translate(glm::mat4(), glm::vec3(otruncOctPos.x, otruncOctPos.y, otruncOctPos.z));
+		//glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		
+		glm::mat4 newProjection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), 0.1f, 10.0f);
+		glm::mat4 MVPmatrix = RV::_projection * RV::_view * model;
+		//glm::mat4 MVPmatrix = RV::_projection * view * model;
+		//MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
+		//MVPmatrix = glm::rotate(MVPmatrix, glm::radians(rotationAngleOct), glm::vec3(1, 1, 0));  //per anar mirant com es veu amb diferents rotacions
 		glUniformMatrix4fv(glGetUniformLocation(currentProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //not the best way
