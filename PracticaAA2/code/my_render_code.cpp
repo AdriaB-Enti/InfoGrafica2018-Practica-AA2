@@ -144,6 +144,8 @@ namespace Scene {
 	void renderScene1(double currentTime) {
 		ImGui::Begin("Scene #1");
 		ImGui::Text("Cubes");
+		if (ImGui::Button("Reset random pos."))
+			randomPositions::setNewRandPositions();
 		ImGui::End();
 
 		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
