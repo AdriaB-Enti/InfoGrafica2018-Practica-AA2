@@ -26,6 +26,7 @@ const int MaxCubes = 10;									//Warning: if all cubes are drawn in the same e
 //Forward declarations and namespaces
 
 namespace randomPositions {
+	void setNewRandPositions();									//Sets a random position for all cubes
 	glm::vec3 arrayCubes[MaxCubes];
 }
 //Namespace para las rotaciones de los cubos 
@@ -107,8 +108,6 @@ namespace RenderVars {
 	glm::vec3 cameraPos = glm::vec3(0, 0, 5);
 	glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
 
-	float rota[2] = { 0.f, 0.f };				//"camera" rotation
-	//Translates the world by the given vector3
 	void testingCamera() {
 		ImGuiIO& io = ImGui::GetIO();
 		if (!io.WantCaptureKeyboard) {
@@ -224,6 +223,23 @@ namespace Scene {
 	}
 }
 
+void randomPositions::setNewRandPositions() {
+	float _squareX;
+	float _squareY;
+	float _squareZ;
+	for (int i = 0; i < MaxCubes; i++) {
+		//Las posiciones X se hacen randoms 
+		_squareX = ((rand() % 100) - 50) / 20.0f;						//Random between [-2.5 and 2.5]
+		randomPositions::arrayCubes[i].x = _squareX;
+		//Posiciones Y randoms 
+		_squareY = ((rand() % 100) - 50) / 20.0f;
+		randomPositions::arrayCubes[i].y = _squareY;
+		//Posiciones Z randoms
+		_squareZ = ((rand() % 100) - 50) / 20.0f;
+		randomPositions::arrayCubes[i].z = _squareZ;
+	}
+}
+
 void GLinit(int width, int height) {
 	srand(time(NULL));																				//The random numbers are diferent from each one 
 	glViewport(0, 0, width, height);
@@ -236,35 +252,7 @@ void GLinit(int width, int height) {
 	//RV::_projection = glm::ortho(-5.f, 5.f, -5.f, 5.f, RV::zNear, RV::zFar);
 	RV::_projection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), 0.1f, 10.0f);
 
-	//lastWidth = width;
-	//lastHeight = height;
-	//glm::vec3 arrayCubes[MaxCubes];
-	//Inicializacion para crear las posiciones randoms 
-	int _squareXRandom;				
-	float _squareX;			
-	int _squareYRandom;
-	float _squareY;
-	int _squareZRandom;
-	float _squareZ;
-
-	for (int i = 0; i < MaxCubes; i++) {
-		//Las posiciones X se hacen randoms 
-		_squareXRandom = (rand() % 8000) - 4000;				//produce un numero entre -2000 - +2000
-		//_squareX = _square1XRandom / 10000.0f;				//ahora lo convierte en uno entre -0.2 y 0.2
-		_squareX = (rand()%100) / 100.0f;				//ahora lo convierte en uno entre -0.2 y 0.2
-		randomPositions::arrayCubes[i].x = _squareX;
-		//Posiciones Y randoms 
-		_squareYRandom = rand() % 4000 - 2000;				
-		//_squareY = _squareYRandom / 10000.0;
-		_squareY = ((rand() % 100)-50) / 100.0f;
-		randomPositions::arrayCubes[i].y = _squareY;
-		//Posiciones Z randoms
-		_squareZRandom = rand() % 4000 - 2000;
-		//_squareZ = _squareZRandom / 10000.0;
-		_squareZ = ((rand() % 100) - 50) / 100.0f;
-		randomPositions::arrayCubes[i].z = _squareZ;
-	}
-
+	randomPositions::setNewRandPositions();
 
 	int _squareXRotationRandom;							//Los cubos deben rotar, para ello, hay que crear un numero aletarorio entre 0 y 1 
 	float _squareXRotation;
