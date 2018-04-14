@@ -17,7 +17,7 @@
 //Global variables
 
 //Cubo 1 
-const int MaxCubes = 10;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
+const int MaxCubes = 3;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
 namespace randomPositions {
 	glm::vec3 arrayCubes[MaxCubes];
 }
@@ -69,7 +69,7 @@ glm::vec4 _square3 = { _square3X,_square3Y,_square3Z,_square3W };	//coordenadas 
 
 
 
-float _distanceWall = 0.07;	//0.07										//Distancia entre el punto cental y las paredes 
+float _distanceWall = 0.8f;	//0.07										//Distancia entre el punto cental y las paredes 
 float rotation_angle = 0.f;												//Variable, con la que podemos rotar los cubos a cierta velocidad 
 bool CubeCanRotate = false;											//Si el cubo puede rotar
 
@@ -141,6 +141,9 @@ namespace RenderVars {
 		bool waspressed = false;
 	} prevMouse;
 
+	glm::vec3 cameraPos = glm::vec3(0, 0, 10);
+	glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
+
 	float panv[3] = { 0.f, -5.f, -15.f };		//"camera" position
 	float rota[2] = { 0.f, 0.f };				//"camera" rotation
 	//Translates the world by the given vector3
@@ -148,6 +151,33 @@ namespace RenderVars {
 		panv[0] += displacement.x;
 		panv[1] += displacement.y;
 		panv[2] += displacement.z;
+	}
+	void testingCamera() {
+		ImGuiIO& io = ImGui::GetIO();
+		if (!io.WantCaptureKeyboard) {
+			if (io.KeysDown[110]) { // N
+				cameraPos += glm::vec3(-0.5f, 0, 0);
+			}
+			if (io.KeysDown[109]) { // M
+				cameraPos += glm::vec3(0.5f, 0, 0);
+			}
+			if (io.KeysDown[104]) { // H
+				cameraPos += glm::vec3(0, 0.5f, 0);
+			}
+			if (io.KeysDown[98]) { // B
+				cameraPos += glm::vec3(0, -0.5f, 0);
+			}
+			if (io.KeysDown[119]) { // W
+				glm::vec3 dirToTarget = glm::normalize(cameraTarget - cameraPos);
+				cameraPos += dirToTarget*0.3f;
+			}
+			if (io.KeysDown[115]) { // S
+				glm::vec3 dirToTarget = glm::normalize(cameraTarget - cameraPos);
+				cameraPos -= dirToTarget * 0.3f;
+			}
+			//actualitzar camera
+			_view = glm::lookAt(cameraPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		}
 	}
 }
 namespace RV = RenderVars;
@@ -244,7 +274,7 @@ void GLinit(int width, int height) {
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	RV::_view = glm::lookAt(glm::vec3(0, 0, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	RV::_view = glm::lookAt(RV::cameraPos, RV::cameraTarget, glm::vec3(0, 1, 0));
 	//RV::_projection = glm::ortho(-5.f, 5.f, -5.f, 5.f, RV::zNear, RV::zFar);
 	RV::_projection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), 0.1f, 10.0f);
 
@@ -321,6 +351,7 @@ void GLcleanup() {
 void GLrender(double currentTime) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	RV::testingCamera();
 	switch (Scene::currentScene)	//using the var currentScene, we render the right scene
 	{
 	case 1: Scene::renderScene1(currentTime);
@@ -363,6 +394,7 @@ namespace arrangedCubes {
 
 		float startPos = -(_distanceWall / 2)*(sideCubes - 1);		//starting position (bottom-left, back corner) - distance to center of the lattice
 		
+		arrangedPositions = std::vector<glm::vec3>();
 
 		//controlar de no posar més cubs que Max cubes
 		//usar el arrangedPositions.size()
@@ -476,36 +508,36 @@ namespace CubeShader {
 			layout(triangle_strip,max_vertices = 48) out;																\n\
 																														\n\
 			void main(){																								\n\
+				float halfSide = distanceWall/2.0;																										\n\
+				vec4 square[24]=vec4[24](vec4(halfSide, -halfSide, halfSide,  1.0),							\n\
+										vec4(halfSide, halfSide, halfSide,  1.0),							\n\
+										vec4(-halfSide, -halfSide, halfSide,  1.0),							\n\
+										vec4(-halfSide, halfSide, halfSide,  1.0),							\n\
 																														\n\
-				vec4 square[24]=vec4[24](vec4(distanceWall, -distanceWall, distanceWall,  1.0),							\n\
-										vec4(distanceWall, distanceWall, distanceWall,  1.0),							\n\
-										vec4(-distanceWall, -distanceWall, distanceWall,  1.0),							\n\
-										vec4(-distanceWall, distanceWall, distanceWall,  1.0),							\n\
+										vec4(halfSide, halfSide, halfSide,  1.0),							\n\
+										vec4(halfSide, halfSide, -halfSide,  1.0),							\n\
+										vec4(-halfSide, halfSide, halfSide,  1.0),							\n\
+										vec4(-halfSide, halfSide, -halfSide,  1.0),							\n\
 																														\n\
-										vec4(distanceWall, distanceWall, distanceWall,  1.0),							\n\
-										vec4(distanceWall, distanceWall, -distanceWall,  1.0),							\n\
-										vec4(-distanceWall, distanceWall, distanceWall,  1.0),							\n\
-										vec4(-distanceWall, distanceWall, -distanceWall,  1.0),							\n\
+										vec4(-halfSide, -halfSide, halfSide,  1.0),							\n\
+										vec4(-halfSide, halfSide, halfSide,  1.0),							\n\
+										vec4(-halfSide, -halfSide, -halfSide,  1.0),						\n\
+										vec4(-halfSide, halfSide, -halfSide,  1.0),							\n\
 																														\n\
-										vec4(-distanceWall, -distanceWall, distanceWall,  1.0),							\n\
-										vec4(-distanceWall, distanceWall, distanceWall,  1.0),							\n\
-										vec4(-distanceWall, -distanceWall, -distanceWall,  1.0),						\n\
-										vec4(-distanceWall, distanceWall, -distanceWall,  1.0),							\n\
+										vec4(-halfSide, -halfSide, -halfSide,  1.0),						\n\
+										vec4(-halfSide, halfSide, -halfSide,  1.0),							\n\
+										vec4(halfSide, -halfSide, -halfSide,  1.0),							\n\
+										vec4(halfSide, halfSide, -halfSide,  1.0),							\n\
 																														\n\
-										vec4(-distanceWall, -distanceWall, -distanceWall,  1.0),						\n\
-										vec4(-distanceWall, distanceWall, -distanceWall,  1.0),							\n\
-										vec4(distanceWall, -distanceWall, -distanceWall,  1.0),							\n\
-										vec4(distanceWall, distanceWall, -distanceWall,  1.0),							\n\
+										vec4(-halfSide, -halfSide, halfSide,  1.0),							\n\
+										vec4(-halfSide, -halfSide, -halfSide,  1.0),						\n\
+										vec4(halfSide, -halfSide, halfSide,  1.0),							\n\
+										vec4(halfSide, -halfSide, -halfSide,  1.0),							\n\
 																														\n\
-										vec4(-distanceWall, -distanceWall, distanceWall,  1.0),							\n\
-										vec4(-distanceWall, -distanceWall, -distanceWall,  1.0),						\n\
-										vec4(distanceWall, -distanceWall, distanceWall,  1.0),							\n\
-										vec4(distanceWall, -distanceWall, -distanceWall,  1.0),							\n\
-																														\n\
-										vec4(distanceWall, -distanceWall, -distanceWall, 1.0),							\n\
-										vec4(distanceWall, distanceWall, -distanceWall,  1.0),							\n\
-										vec4(distanceWall, -distanceWall, distanceWall,  1.0),							\n\
-										vec4(distanceWall, distanceWall, distanceWall,  1.0));							\n\
+										vec4(halfSide, -halfSide, -halfSide, 1.0),							\n\
+										vec4(halfSide, halfSide, -halfSide,  1.0),							\n\
+										vec4(halfSide, -halfSide, halfSide,  1.0),							\n\
+										vec4(halfSide, halfSide, halfSide,  1.0));							\n\
 					\n\
 					\n\
 					for(int i = 0; i < 4; i++){																			\n\
