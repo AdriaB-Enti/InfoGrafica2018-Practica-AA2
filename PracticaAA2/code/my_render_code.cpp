@@ -16,8 +16,15 @@
 
 //Global variables
 
-//Cubo 1 
+float _distanceWall = 0.8f;	//0.07										//Distancia entre el punto cental y las paredes 
+float rotation_angle = 0.f;												//Variable, con la que podemos rotar los cubos a cierta velocidad 
+bool CubeCanRotate = false;												//Si el cubo puede rotar
 const int MaxCubes = 10;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
+
+
+
+//Forward declarations and namespaces
+
 namespace randomPositions {
 	glm::vec3 arrayCubes[MaxCubes];
 }
@@ -30,55 +37,11 @@ namespace Fall {
 	glm::vec3 fallingCubes[MaxCubes];
 }
 
-float min = -0.5f;										//Minimum and maximum values of the random 
-float max =	0.5f;
-
-
-int _square1XRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
-float _square1X = _square1XRandom / 10000.0;			//ahora lo convierte en uno entre -0.2 y 0.2
-int _square1YRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
-float _square1Y = _square1YRandom / 10000.0;			//Entre -0.2 y 0.2
-int _square1ZRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
-float _square1Z = _square1ZRandom / 10000.0;			//Entre -0.2 y 0.2
-float _square1W = 1.f;
-glm::vec4 _square1 = { _square1X,_square1Y,_square1Z,_square1W };	//coordenadas del punto central, la seed 
-
-//Cubo 2
-int _square2XRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
-float _square2X = _square2XRandom / 10000.0;			//ahora lo convierte en uno entre -0.2 y 0.2
-int _square2YRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
-float _square2Y = _square2YRandom / 10000.0;			//Entre -0.2 y 0.2
-int _square2ZRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
-float _square2Z = _square2ZRandom / 10000.0;			//Entre -0.2 y 0.2
-float _square2W = 1.f;
-glm::vec4 _square2 = { _square2X,_square2Y,_square2Z,_square2W };	//coordenadas del punto central, la seed 
-
-//Cubo 3
-int _square3XRandom = rand() % 4000 - 2000;				//produce un numero entre -2000 - +2000
-float _square3X = _square3XRandom / 10000.0;			//ahora lo convierte en uno entre -0.2 y 0.2
-int _square3YRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
-float _square3Y = _square3YRandom / 10000.0;			//Entre -0.2 y 0.2
-int _square3ZRandom = rand() % 4000 - 2000;				//Entre -2000 y 2000
-float _square3Z = _square3ZRandom / 10000.0;			//Entre -0.2 y 0.2
-float _square3W = 1.f;
-glm::vec4 _square3 = { _square3X,_square3Y,_square3Z,_square3W };	//coordenadas del punto central, la seed 
-
-
-
-
-
-
-
-float _distanceWall = 0.8f;	//0.07										//Distancia entre el punto cental y las paredes 
-float rotation_angle = 0.f;												//Variable, con la que podemos rotar los cubos a cierta velocidad 
-bool CubeCanRotate = false;											//Si el cubo puede rotar
-
 namespace arrangedCubes {
-	std::vector<glm::vec3> arrangedPositions;
-	void arrangeCubes();
+	std::vector<glm::vec3> cubicLatticePositions;						//Cube lattice positions
+	void arrangeCubesIntoLattice();
 }
 
-//Forward declarations
 namespace ImGui {
 	void Render();
 }
@@ -141,17 +104,11 @@ namespace RenderVars {
 		bool waspressed = false;
 	} prevMouse;
 
-	glm::vec3 cameraPos = glm::vec3(0, 0, 10);
+	glm::vec3 cameraPos = glm::vec3(0, 0, 5);
 	glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
 
-	float panv[3] = { 0.f, -5.f, -15.f };		//"camera" position
 	float rota[2] = { 0.f, 0.f };				//"camera" rotation
 	//Translates the world by the given vector3
-	void travelling(glm::vec3 displacement) {
-		panv[0] += displacement.x;
-		panv[1] += displacement.y;
-		panv[2] += displacement.z;
-	}
 	void testingCamera() {
 		ImGuiIO& io = ImGui::GetIO();
 		if (!io.WantCaptureKeyboard) {
@@ -191,7 +148,8 @@ namespace Scene {
 		ImGui::End();
 
 		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
-			CubeShader::ShaderRenderCode(currentTime, cubeN, 0.f);												//Renderizar los shaders. 0.f es rotation_angle
+			CubeShader::renderCubeInPos(randomPositions::arrayCubes[cubeN],0,_distanceWall);
+			//CubeShader::ShaderRenderCode(currentTime, cubeN, 0.f);												//Renderizar los cubos. 0.f es rotation_angle
 			
 		}
 	}
@@ -201,11 +159,11 @@ namespace Scene {
 		ImGui::Text("Truncated octahedrons");
 		ImGui::End();
 
-		for (int i = 0; i < arrangedCubes::arrangedPositions.size(); i++)
+		for (int i = 0; i < arrangedCubes::cubicLatticePositions.size(); i++)
 		{
-			//std::cout << arrangedCubes::arrangedPositions.at(i).x << "," << arrangedCubes::arrangedPositions.at(i).y << "," << arrangedCubes::arrangedPositions.at(i).z << std::endl;
-			//truncOctahedronShader::ShaderRenderCode(currentTime, false, arrangedCubes::arrangedPositions.at(i));
-			CubeShader::renderCubeInPos(arrangedCubes::arrangedPositions.at(i), 0, _distanceWall);
+			//std::cout << arrangedCubes::cubicLatticePositions.at(i).x << "," << arrangedCubes::cubicLatticePositions.at(i).y << "," << arrangedCubes::cubicLatticePositions.at(i).z << std::endl;
+			//truncOctahedronShader::ShaderRenderCode(currentTime, false, arrangedCubes::cubicLatticePositions.at(i));
+			CubeShader::renderCubeInPos(arrangedCubes::cubicLatticePositions.at(i), 0, _distanceWall);
 		}
 	}
 
@@ -242,7 +200,7 @@ namespace Scene {
 				}
 			}
 			if (io.KeysDown[50] && Scene::currentScene != 2) {		// Key 2
-				arrangedCubes::arrangeCubes();
+				arrangedCubes::arrangeCubesIntoLattice();
 				Scene::currentScene = 2;
 				for (int i = 0; i < MaxCubes; i++) {
 					Fall::fallingCubes[MaxCubes].y = 0.f;
@@ -280,7 +238,7 @@ void GLinit(int width, int height) {
 
 	//lastWidth = width;
 	//lastHeight = height;
-	glm::vec3 arrayCubes[MaxCubes];
+	//glm::vec3 arrayCubes[MaxCubes];
 	//Inicializacion para crear las posiciones randoms 
 	int _squareXRandom;				
 	float _squareX;			
@@ -385,14 +343,14 @@ void GLResize(int width, int height) {
 
 namespace arrangedCubes {
 	//Place the cubes from bottom to top
-	void arrangeCubes() {
+	void arrangeCubesIntoLattice() {
 		int sideCubes = 1;
 		while (sideCubes*sideCubes*sideCubes < MaxCubes)	//Finds out whats the smallest formation of cubes. Calculates how much cubes need to be per side
 		{
 			sideCubes++;
 		}
 
-		arrangedPositions = std::vector<glm::vec3>();
+		cubicLatticePositions = std::vector<glm::vec3>();
 
 		float startPos = -(_distanceWall / 2)*(sideCubes - 1);		//Starting position (bottom-left, back corner) - distance to center of the lattice (for each axis)
 		float separation = 0.0f;									//Adds some optional separation to make each cube more visible
@@ -400,11 +358,11 @@ namespace arrangedCubes {
 		std::cout << "cubeLattic of " << sideCubes << " sides and " << MaxCubes << " cubes:\n";
 		for (int z = 0; z < sideCubes; z++)
 		{
-			if (arrangedPositions.size() == MaxCubes)
+			if (cubicLatticePositions.size() == MaxCubes)
 				break;
 			for (int y = 0; y < sideCubes; y++)
 			{
-				if (arrangedPositions.size() == MaxCubes)
+				if (cubicLatticePositions.size() == MaxCubes)
 					break;
 				for (int x = 0; x < sideCubes; x++)
 				{
@@ -413,15 +371,15 @@ namespace arrangedCubes {
 						startPos+y*_distanceWall+y*separation,
 						startPos+z*_distanceWall+z*separation );
 
-					arrangedPositions.push_back(newCubePostion);
+					cubicLatticePositions.push_back(newCubePostion);
 					std::cout << "cubeLattice" << newCubePostion.x << " " << newCubePostion.y << " " << newCubePostion.z << "\n";
 
-					if (arrangedPositions.size()==MaxCubes)
+					if (cubicLatticePositions.size()==MaxCubes)
 						break;
 				}
 			}
 		}
-		std::cout << "S'han col·locat un total de " << arrangedPositions.size() << std::endl;
+		std::cout << "S'han col·locat un total de " << cubicLatticePositions.size() << std::endl;
 
 	}
 }
@@ -641,14 +599,9 @@ namespace CubeShader {
 
 	
 	void ShaderRenderCode(double currentTime, int cubeN, float rotation_angle) {
-		/*const GLfloat color[] = { 0.0,0.0,0.0f,1.0f };
-		glClearBufferfv(GL_COLOR, 0, color);*/
-
 		glUseProgram(ShaderRenderProgram);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)currentTime);
 		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)randomPositions::arrayCubes[cubeN].x, (GLfloat)randomPositions::arrayCubes[cubeN].y, (GLfloat)randomPositions::arrayCubes[cubeN].z);
-		//std::cout << currentTime << std::endl;
-		//Cubo 1
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);			//distancia de las paredes respecto a la seed 
 		
 		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "falling"), (GLfloat)Fall::fallingCubes[cubeN].x, (GLfloat)Fall::fallingCubes[cubeN].y, (GLfloat)Fall::fallingCubes[cubeN].z);				//Caida de los cubos 
