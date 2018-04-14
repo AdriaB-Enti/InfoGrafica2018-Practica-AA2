@@ -17,7 +17,7 @@
 //Global variables
 
 //Cubo 1 
-const int MaxCubes = 3;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
+const int MaxCubes = 10;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
 namespace randomPositions {
 	glm::vec3 arrayCubes[MaxCubes];
 }
@@ -384,20 +384,19 @@ void GLResize(int width, int height) {
 }
 
 namespace arrangedCubes {
+	//Place the cubes from bottom to top
 	void arrangeCubes() {
-		//place the cubes from bottom to top
 		int sideCubes = 1;
-		while (sideCubes*sideCubes*sideCubes < MaxCubes)	//find out whats the smallest formation of cubes. Calculates how much cubes need to be per side
+		while (sideCubes*sideCubes*sideCubes < MaxCubes)	//Finds out whats the smallest formation of cubes. Calculates how much cubes need to be per side
 		{
 			sideCubes++;
 		}
 
-		float startPos = -(_distanceWall / 2)*(sideCubes - 1);		//starting position (bottom-left, back corner) - distance to center of the lattice
-		
 		arrangedPositions = std::vector<glm::vec3>();
 
-		//controlar de no posar més cubs que Max cubes
-		//usar el arrangedPositions.size()
+		float startPos = -(_distanceWall / 2)*(sideCubes - 1);		//Starting position (bottom-left, back corner) - distance to center of the lattice (for each axis)
+		float separation = 0.0f;									//Adds some optional separation to make each cube more visible
+
 		std::cout << "cubeLattic of " << sideCubes << " sides and " << MaxCubes << " cubes:\n";
 		for (int z = 0; z < sideCubes; z++)
 		{
@@ -409,14 +408,16 @@ namespace arrangedCubes {
 					break;
 				for (int x = 0; x < sideCubes; x++)
 				{
-					//_distanceWall
-					glm::vec3 newCubePostion = glm::vec3(startPos+x*_distanceWall,startPos+y*_distanceWall,startPos+z*_distanceWall);
+					glm::vec3 newCubePostion = glm::vec3(
+						startPos+x*_distanceWall+x*separation,
+						startPos+y*_distanceWall+y*separation,
+						startPos+z*_distanceWall+z*separation );
+
 					arrangedPositions.push_back(newCubePostion);
 					std::cout << "cubeLattice" << newCubePostion.x << " " << newCubePostion.y << " " << newCubePostion.z << "\n";
+
 					if (arrangedPositions.size()==MaxCubes)
-					{
 						break;
-					}
 				}
 			}
 		}
@@ -497,11 +498,11 @@ namespace CubeShader {
 			uniform float time;																							\n\
 			uniform mat4 mvpMat;																						\n\
 			\n\
-			uniform vec3 cubes;																							\n\
+			uniform vec3 cubes;			//Position of current cube we are creating (a SINGLE cube)						\n\
 			uniform float square1W;																						\n\
-			uniform mat4 AxisSquare;																					\n\
+			uniform mat4 AxisSquare;	//rotation of the cube															\n\
 			\n\
-			uniform float distanceWall;																					\n\
+			uniform float distanceWall;		//lenght of the cube SIDE													\n\
 			\n\
 			uniform vec3 falling;																						\n\
 			layout(triangles) in;																						\n\
@@ -675,16 +676,15 @@ namespace CubeShader {
 
 	void renderCubeInPos(glm::vec3 position, float rotation_angle, float sideLenght) {
 		glUseProgram(ShaderRenderProgram);
-		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)0);
-		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)position.x, (GLfloat)position.y, (GLfloat)position.z);
-		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)sideLenght);
+		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)0, (GLfloat)0, (GLfloat)0);					//Useless variables
 		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "falling"), (GLfloat)0, (GLfloat)0, (GLfloat)0);
-		glm::mat4 rotSquare;
-		//rotSquare = glm::rotate(glm::mat4(), rotation_angle, glm::vec3(0));	//can be changed if needed
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(rotSquare));
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(glm::mat4()));
+		//glm::mat4 rotSquare = glm::rotate(glm::mat4(), rotation_angle, glm::vec3(0));	//can be changed if needed
 
-		//model position and rotation are already in the shader...
-		glm::mat4 MVPmatrix = RV::_projection * RV::_view;
+		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)sideLenght);
+
+		glm::mat4 cubeModel = glm::translate(position);								//add rotation or scaling if needed
+		glm::mat4 MVPmatrix = RV::_projection * RV::_view * cubeModel;
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
 		glDrawArrays(GL_TRIANGLES, 0, 24);
