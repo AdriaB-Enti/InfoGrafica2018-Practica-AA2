@@ -10,7 +10,7 @@
 #include <time.h>
 #include "GL_framework.h"
 #include <vector>
-
+#include <list>
 #include "glm/ext.hpp"		//Libreria para imprimir con cout vec3 y mat4 
 
 
@@ -35,7 +35,7 @@ namespace rotationCubes {
 }
 //Namespace para los valores de la Y cuando deban caer o no 
 namespace Fall {
-	const float maxFallDist = 10.f;
+	const float maxFallDist = 9.f;
 	const float fallSpeed = 0.07f;
 	float currentFallDist = 0;
 }
@@ -43,6 +43,26 @@ namespace Fall {
 namespace arrangedCubes {
 	std::vector<glm::vec3> cubicLatticePositions;						//Cube lattice positions
 	void arrangeCubesIntoLattice();
+}
+
+namespace Matrix {
+	const float maxTimeLife = 3;
+	struct objectTrail
+	{
+		float timeLife;
+		glm::vec3 position;
+		float rotation;
+		glm::vec3 rotationAxis;
+	};
+	std::list<objectTrail> trailObjectsList;
+	float rotation = 0;
+	const float maxFallDist = 8.f;
+	const float fallSpeed = 0.07f;
+	float currentFallDist = 0;
+
+	const float nextTrailObTime = _distanceWall * 1.72f;			//time until we add a new trail object
+	const float objTrailMaxLife = nextTrailObTime * 4;			//time until a trail object is destroyed
+	float nextTrailCounter = 0;					//Distance objects needs to fall so we can add new trail objects
 }
 
 namespace ImGui {
@@ -55,6 +75,7 @@ namespace Scene {
 	void renderScene2(double currentTime);
 	void renderScene3(double currentTime);
 	void renderScene4(double currentTime);
+	void renderScene5(double currentTime);
 	void renderScene6(double currentTime);
 	void detectInput();
 }
@@ -76,7 +97,7 @@ namespace truncOctahedronShader {
 	void ShaderInitCode();
 	GLuint ShaderCompile(bool wireframe);
 	void ShaderCleanupCode(void);
-	void ShaderRenderWithRotation(bool wireframe, glm::vec3 otruncOctPos, float rotationRads = 0, glm::vec3 rotationAxis = glm::vec3(1));		//Rotation-rotationAxis are optional parameters
+	void ShaderRenderWithRotation(bool wireframe, glm::vec3 otruncOctPos, int color=-1, float rotationRads = 0, glm::vec3 rotationAxis = glm::vec3(1));		//Color/Rotation/rotationAxis are optional parameters. Color can only be [0...6]
 
 	GLuint ShaderRenderProgram;
 	GLuint WireframeShaderRenderProgram;
@@ -110,6 +131,7 @@ namespace RenderVars {
 
 	glm::vec3 cameraPos = glm::vec3(0, 0, 5);
 	glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
+	float ortoSize = 5.f;
 
 	void testingCamera() {
 		ImGuiIO& io = ImGui::GetIO();
@@ -139,10 +161,13 @@ namespace RenderVars {
 		}
 	}
 	void goOrto() {
-		_projection = glm::ortho(-5.f, 5.f, -5.f, 5.f, zNear, zFar);
+		_projection = glm::ortho(-ortoSize, ortoSize, -ortoSize, ortoSize, zNear, zFar);
 	}
 	void goPersp() {
 		_projection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), 0.1f, 10.0f);
+	}
+	void resetToDefaultValues() {
+		cameraPos = glm::vec3(0, 0, 5);
 	}
 }
 namespace RV = RenderVars;
@@ -208,8 +233,61 @@ namespace Scene {
 		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
 			glm::vec3 truncOctPosition = randomPositions::arrayCubes[cubeN] + glm::vec3(0, -Fall::currentFallDist, 0);
 			//truncOctahedronShader::ShaderRenderCode(false, truncOctPosition);
-			truncOctahedronShader::ShaderRenderWithRotation(false, truncOctPosition,rotation_angle, rotationCubes::arrayRotationCubes[cubeN]);
+			truncOctahedronShader::ShaderRenderWithRotation(false, truncOctPosition, -1, rotation_angle, rotationCubes::arrayRotationCubes[cubeN]);
 		}
+	}
+
+	void renderScene5(double currentTime) {
+		ImGui::Begin("Scene #5");
+		ImGui::Text("Mattrix effect");
+		if (ImGui::Button("Reset"))
+			Matrix::currentFallDist = 0;
+		ImGui::End();
+
+
+		//Render bottom objects (white)
+		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
+			glm::vec3 truncOctPosition = randomPositions::arrayCubes[cubeN] + glm::vec3(0, -Matrix::currentFallDist, 0);
+			truncOctahedronShader::ShaderRenderWithRotation(false, truncOctPosition, 6, Matrix::rotation, rotationCubes::arrayRotationCubes[cubeN]);
+		}
+			
+		//Render trail objects (green)
+		for (std::list<Matrix::objectTrail>::iterator it = Matrix::trailObjectsList.begin(); it != Matrix::trailObjectsList.end(); it++)
+		{
+			Matrix::objectTrail obTrail = (Matrix::objectTrail)*it;
+			truncOctahedronShader::ShaderRenderWithRotation(false, obTrail.position, 0, obTrail.rotation, obTrail.rotationAxis);
+
+			//Delete trail objects if needed
+			it->timeLife += Matrix::fallSpeed;
+			if (it->timeLife >= Matrix::objTrailMaxLife) {
+				Matrix::trailObjectsList.erase(it);
+			}
+		}
+
+		//Add new trail objects if needed;
+		if (Matrix::nextTrailCounter >= Matrix::nextTrailObTime)
+		{
+			for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
+				Matrix::objectTrail newObjectTrail;
+				newObjectTrail.position = randomPositions::arrayCubes[cubeN]+glm::vec3(0,-Matrix::currentFallDist,0);
+				newObjectTrail.rotation = Matrix::rotation;
+				newObjectTrail.rotationAxis = rotationCubes::arrayRotationCubes[cubeN];
+				newObjectTrail.timeLife = 0;
+				Matrix::trailObjectsList.push_back(newObjectTrail);
+			}
+			Matrix::nextTrailCounter -= Matrix::nextTrailObTime;
+		}
+		Matrix::nextTrailCounter += Matrix::fallSpeed;
+
+		//Update positions and rotation and reset if needed
+		Matrix::rotation += 0.05f;
+		Matrix::currentFallDist += Matrix::fallSpeed;
+
+		if (Matrix::currentFallDist > Matrix::maxFallDist) {
+			Matrix::currentFallDist = 0;
+			randomPositions::setNewRandPositions();
+		}
+			
 	}
 
 	void renderScene6(double currentTime) {
@@ -229,23 +307,36 @@ namespace Scene {
 			if (io.KeysDown[49] && Scene::currentScene != 1) {		// Key 1
 				Scene::currentScene = 1;
 				RV::goPersp();
+				RV::resetToDefaultValues();
 			}
 			if (io.KeysDown[50] && Scene::currentScene != 2) {		// Key 2
 				arrangedCubes::arrangeCubesIntoLattice();
 				Scene::currentScene = 2;
 				RV::goPersp();
+				RV::resetToDefaultValues();
 			}
 			if (io.KeysDown[51] && Scene::currentScene != 3) {		// Key 3
 				Scene::currentScene = 3;
 				RV::goOrto();
+				RV::resetToDefaultValues();
 			}
 			if (io.KeysDown[52] && Scene::currentScene != 4) {		// Key 4
 				Scene::currentScene = 4;
+				RV::goOrto();
+				RV::resetToDefaultValues();
+			}
+			if (io.KeysDown[53] && Scene::currentScene != 5) {		// Key 5
+				Matrix::trailObjectsList.clear();
+				Matrix::nextTrailCounter = 0;
+				Matrix::currentFallDist = 0;
+				Matrix::rotation = 0;
+				Scene::currentScene = 5;
 				RV::goOrto();
 			}
 			if (io.KeysDown[54] && Scene::currentScene != 6) {		// Key 6
 				Scene::currentScene = 6;
 				//persp? orto?
+				RV::resetToDefaultValues();
 			}
 		}
 	}
@@ -320,7 +411,7 @@ void GLrender(double currentTime) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	RV::testingCamera();
-	switch (Scene::currentScene)	//using the var currentScene, we render the right scene
+	switch (Scene::currentScene)	//Using the var currentScene, we render the right scene only
 	{
 	case 1: Scene::renderScene1(currentTime);
 		break;
@@ -330,9 +421,11 @@ void GLrender(double currentTime) {
 		break;
 	case 4: Scene::renderScene4(currentTime);
 		break;
+	case 5: Scene::renderScene5(currentTime);
+		break;
 	case 6: Scene::renderScene6(currentTime);
 		break;
-	default: //Shouldn't happen
+	default: //Should not happen
 		break;
 	}
 
@@ -624,12 +717,13 @@ namespace truncOctahedronShader {
 		\n\
 		void main(){\n\
 			color = vec4(0.0,0.8,1.0,1.0);\n\
-			const vec4 colorsLados[6] = vec4[6](vec4( 0, 1, 0,1.0),				\n\
+			const vec4 colorsLados[7] = vec4[7](vec4( 0, 1, 0,1.0),				\n\
 												vec4(0.5, 1, 0.5, 1.0),			\n\
 												vec4(1, 0.25, 0.5, 1.0),		\n\
 												vec4(0.25, 0, 0, 1.0),			\n\
 												vec4( 1, 0, 0, 1.0),			\n\
-												vec4( 0.25, 0.25, 0.5, 1.0));	\n\
+												vec4( 0.25, 0.25, 0.5, 1.0),	\n\
+												vec4( 1, 1, 1, 1.0) );	//White	\n\
 			color = colorsLados[gl_PrimitiveID ];								\n\
 		}"
 	};
@@ -641,6 +735,7 @@ namespace truncOctahedronShader {
 		\n\
 		uniform mat4 mvpMat;\n\
 		uniform float sideLenght;\n\
+		uniform int fcolor;\n\
 		layout(triangles) in;												\n\
 		layout(triangle_strip,max_vertices = 76) out;						\n\
 		void main(){														\n\
@@ -654,10 +749,12 @@ namespace truncOctahedronShader {
 			vec4 c = vec4( sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
 			vec4 d = vec4( -sideLenght/2, 0.0, -sideLenght/2, 1.0);\n\
 				//Truncated octahedron \n\
-				gl_PrimitiveID = 4; \n\
 				vec4 bottomVertex[5] = vec4[5](a,b,c,d,a);							\n\
 				for(int i=0;i<4;i++){												\n\
-					gl_PrimitiveID = i;												\n\
+					if(fcolor != -1){						\n\
+						gl_PrimitiveID = fcolor;			\n\
+					} else {								\n\
+						gl_PrimitiveID = i; }				\n\
 					vec4 left	= bottomVertex[i];				//a,b,c,d			\n\
 					vec4 right	= bottomVertex[i+1];			//b,c,d,a			\n\
 					//----Top Hexagons												\n\
@@ -692,7 +789,10 @@ namespace truncOctahedronShader {
 					vec4 squareCenter	= left;					//a,b,c,d			\n\
 					vec4 squareRight	= right;				//b,c,d,a			\n\
 					vec4 squareLeft	= bottomVertex[(3+i)%4];	//d,a,b,c			\n\
-					gl_PrimitiveID = 5;												\n\
+					if(fcolor != -1){						\n\
+						gl_PrimitiveID = fcolor;			\n\
+					} else {								\n\
+						gl_PrimitiveID = 5; }				\n\
 					gl_Position = mvpMat*(squareCenter+(squareLeft-squareCenter)/3);		\n\
 					EmitVertex();															\n\
 					gl_Position = mvpMat*(squareCenter+(down-squareCenter)/3);				\n\
@@ -704,7 +804,10 @@ namespace truncOctahedronShader {
 					EndPrimitive();															\n\
 				}\n\
 				//----Top Square\n\
-				gl_PrimitiveID = 5; \n\
+				if(fcolor != -1){						\n\
+					gl_PrimitiveID = fcolor;			\n\
+				} else {								\n\
+					gl_PrimitiveID = 5; }				\n\
 				gl_Position = mvpMat*(up+(a-up)/3);		\n\
 				EmitVertex();\n\
 				gl_Position = mvpMat*(up+(b-up)/3);		\n\
@@ -835,12 +938,12 @@ namespace truncOctahedronShader {
 
 	}
 
-	void ShaderRenderWithRotation(bool wireframe, glm::vec3 otruncOctPos, float rotationRads, glm::vec3 rotationAxis) {
-
+	void ShaderRenderWithRotation(bool wireframe, glm::vec3 otruncOctPos, int color, float rotationRads, glm::vec3 rotationAxis) {
 		GLuint currentProgram = wireframe ? WireframeShaderRenderProgram : ShaderRenderProgram;
 		glUseProgram(currentProgram);
 
 		glUniform1f(glGetUniformLocation(currentProgram, "sideLenght"), (GLfloat)sideLenght);
+		glUniform1i(glGetUniformLocation(currentProgram, "fcolor"), (GLint)color);
 		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), (GLfloat)truncatedOctTest.x, (GLfloat)truncatedOctTest.y, (GLfloat)truncatedOctTest.z, (GLfloat)truncatedOctTest.w);
 
 		glm::mat4 rot;
