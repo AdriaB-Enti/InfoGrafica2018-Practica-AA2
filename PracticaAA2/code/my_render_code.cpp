@@ -54,6 +54,7 @@ namespace Scene {
 	void renderScene1(double currentTime);
 	void renderScene2(double currentTime);
 	void renderScene3(double currentTime);
+	void renderScene4(double currentTime);
 	void renderScene6(double currentTime);
 	void detectInput();
 }
@@ -75,7 +76,7 @@ namespace truncOctahedronShader {
 	void ShaderInitCode();
 	GLuint ShaderCompile(bool wireframe);
 	void ShaderCleanupCode(void);
-	void ShaderRenderCode(double currentTime, bool wireframe, glm::vec3 otruncOctPos);
+	void ShaderRenderWithRotation(bool wireframe, glm::vec3 otruncOctPos, float rotationRads = 0, glm::vec3 rotationAxis = glm::vec3(1));		//Rotation-rotationAxis are optional parameters
 
 	GLuint ShaderRenderProgram;
 	GLuint WireframeShaderRenderProgram;
@@ -152,7 +153,7 @@ namespace Scene {
 	void renderScene1(double currentTime) {
 		ImGui::Begin("Scene #1");
 		ImGui::Text("Cubes");
-		if (ImGui::Button("Reset random pos."))
+		if (ImGui::Button("Generate random pos."))
 			randomPositions::setNewRandPositions();
 		ImGui::End();
 
@@ -177,10 +178,11 @@ namespace Scene {
 
 	void renderScene3(double currentTime) {
 		ImGui::Begin("Scene #3");
-		ImGui::Text("Cubes");
+		ImGui::Text("Falling cubes");
 		if (ImGui::Button("Reset"))
 			Fall::currentFallDist = 0;
 		ImGui::End();
+		
 		Fall::currentFallDist += Fall::fallSpeed;
 		if (Fall::currentFallDist > Fall::maxFallDist)
 			Fall::currentFallDist = 0;
@@ -190,13 +192,33 @@ namespace Scene {
 		}
 	}
 
+	void renderScene4(double currentTime) {
+		ImGui::Begin("Scene #4");
+		ImGui::Text("Falling truncated octahedrons");
+		if (ImGui::Button("Reset"))
+			Fall::currentFallDist = 0;
+		ImGui::End();
+		
+		Fall::currentFallDist += Fall::fallSpeed;
+		if (Fall::currentFallDist > Fall::maxFallDist)
+			Fall::currentFallDist = 0;
+
+		rotation_angle += 0.05f;
+		
+		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
+			glm::vec3 truncOctPosition = randomPositions::arrayCubes[cubeN] + glm::vec3(0, -Fall::currentFallDist, 0);
+			//truncOctahedronShader::ShaderRenderCode(false, truncOctPosition);
+			truncOctahedronShader::ShaderRenderWithRotation(false, truncOctPosition,rotation_angle, rotationCubes::arrayRotationCubes[cubeN]);
+		}
+	}
+
 	void renderScene6(double currentTime) {
 		ImGui::Begin("Scene #6");
 		ImGui::Text("Truncated octahedrons:\nDrawing wireframes");
 		ImGui::End();
 
 		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
-		truncOctahedronShader::ShaderRenderCode(currentTime, true, truncOctahedronShader::truncatedOctTest);
+		truncOctahedronShader::ShaderRenderWithRotation(true, truncOctahedronShader::truncatedOctTest);
 
 	}
 	
@@ -215,6 +237,10 @@ namespace Scene {
 			}
 			if (io.KeysDown[51] && Scene::currentScene != 3) {		// Key 3
 				Scene::currentScene = 3;
+				RV::goOrto();
+			}
+			if (io.KeysDown[52] && Scene::currentScene != 4) {		// Key 4
+				Scene::currentScene = 4;
 				RV::goOrto();
 			}
 			if (io.KeysDown[54] && Scene::currentScene != 6) {		// Key 6
@@ -301,6 +327,8 @@ void GLrender(double currentTime) {
 	case 2: Scene::renderScene2(currentTime);
 		break;
 	case 3: Scene::renderScene3(currentTime);
+		break;
+	case 4: Scene::renderScene4(currentTime);
 		break;
 	case 6: Scene::renderScene6(currentTime);
 		break;
@@ -613,11 +641,11 @@ namespace truncOctahedronShader {
 		\n\
 		uniform mat4 mvpMat;\n\
 		uniform float sideLenght;\n\
-		layout(triangles) in;																						\n\
-		layout(triangle_strip,max_vertices = 76) out;																\n\
-		void main(){ \n\
-			//float sideLenght = 0.5;													\n\
-			//																		\n\
+		layout(triangles) in;												\n\
+		layout(triangle_strip,max_vertices = 76) out;						\n\
+		void main(){														\n\
+			//float sideLenght = 0.5;										\n\
+			//																\n\
 			vec4 up = vec4(0.0, sqrt(2)*sideLenght/2.0, 0.0, 1.0);			\n\
 			vec4 down = vec4(0.0, -sqrt(2)*sideLenght/2.0, 0.0, 1.0);		\n\
 			//Octahedron square:				\n\
@@ -723,7 +751,7 @@ namespace truncOctahedronShader {
 				for(int i=0;i<4;i++){												\n\
 					vec4 left	= bottomVertex[i];				//a,b,c,d			\n\
 					vec4 right	= bottomVertex[i+1];			//b,c,d,a			\n\
-					//----Top Hexagons (includes top and middle squares				\n\
+					//----Top Hexagons (includes top and middle squares)			\n\
 					gl_Position = mvpMat*(up+(right-up)/3);							\n\
 					EmitVertex();													\n\
 					gl_Position = mvpMat*(up+(left-up)/3);							\n\
@@ -793,7 +821,7 @@ namespace truncOctahedronShader {
 		ShaderRenderProgram = ShaderCompile(false);
 		glCreateVertexArrays(1, &ShaderVAO);
 		glBindVertexArray(ShaderVAO);
-		//wireframe
+		//Wireframe shader
 		WireframeShaderRenderProgram = ShaderCompile(true);
 		glCreateVertexArrays(1, &WireframeShaderVAO);
 		glBindVertexArray(WireframeShaderVAO);
@@ -801,46 +829,31 @@ namespace truncOctahedronShader {
 	void ShaderCleanupCode(void) {
 		glDeleteVertexArrays(1, &ShaderVAO);
 		glBindVertexArray(ShaderRenderProgram);
-		//wireframe
+		//Wireframe shader
 		glDeleteVertexArrays(1, &WireframeShaderVAO);
 		glBindVertexArray(WireframeShaderRenderProgram);
 
 	}
-	void ShaderRenderCode(double currentTime, bool wireframe, glm::vec3 otruncOctPos) {
-		//canviar els truncatedOctTest per octruncOctPos
 
-		//Debug
-		rotationAngleOct = currentTime * 50;
-
+	void ShaderRenderWithRotation(bool wireframe, glm::vec3 otruncOctPos, float rotationRads, glm::vec3 rotationAxis) {
 
 		GLuint currentProgram = wireframe ? WireframeShaderRenderProgram : ShaderRenderProgram;
-
 		glUseProgram(currentProgram);
 
 		glUniform1f(glGetUniformLocation(currentProgram, "sideLenght"), (GLfloat)sideLenght);
 		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), (GLfloat)truncatedOctTest.x, (GLfloat)truncatedOctTest.y, (GLfloat)truncatedOctTest.z, (GLfloat)truncatedOctTest.w);
-		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), 0, 0, 0, 1);
 
-		/*glm::mat4 rot = glm::rotate(glm::mat4(), 0.05f, glm::vec3(0.f, 1.f, 0.f));
-		glm::mat4 myMVP = rot * myMVP;*/
-
-		
-		glm::mat4 model = glm::translate(glm::mat4(), glm::vec3(otruncOctPos.x, otruncOctPos.y, otruncOctPos.z));
-		//glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-		
-		glm::mat4 newProjection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), 0.1f, 10.0f);
+		glm::mat4 rot;
+		if (rotationRads != 0)
+			rot = glm::rotate(glm::mat4(), rotationRads, rotationAxis);
+		glm::mat4 model = glm::translate(glm::mat4(), glm::vec3(otruncOctPos.x, otruncOctPos.y, otruncOctPos.z)) * rot;
 		glm::mat4 MVPmatrix = RV::_projection * RV::_view * model;
-		//glm::mat4 MVPmatrix = RV::_projection * view * model;
-		//MVPmatrix = glm::mat4();	//TODO: arreglar, de mentres fer com si no projectessim res
-		//MVPmatrix = glm::rotate(MVPmatrix, glm::radians(rotationAngleOct), glm::vec3(1, 1, 0));  //per anar mirant com es veu amb diferents rotacions
+
 		glUniformMatrix4fv(glGetUniformLocation(currentProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));
 
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //not the best way
-		GLsizei vertexs = wireframe ? 48 : 76;
+		GLsizei vertexs = wireframe ? 48 : 76;				//Wireframe rendering uses less vertices
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, vertexs);
-		//glDrawArrays(GL_LINE_STRIP, 0, 76);
 	}
-
 }
 
 //TODO: els compileShader i linkProgram que tinguin les seves propies funcions (est� a l'altre pr�ctic
