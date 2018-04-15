@@ -295,15 +295,14 @@ namespace Scene {
 		ImGui::Text("Bitruncated cubic honeycomb:\nDrawing wireframes");
 		ImGui::End();
 
-		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.height;
 		glm::vec3 startPos = glm::vec3(0);
 
 		float distance = 2 * truncOctahedronShader::sideLenght / 3;	//entre trnc oct.
-		for (int xzDis = -5; xzDis < 5; xzDis++) {
+		for (int x = -7; x < 7; x++) {
 			for (int height = -5; height < 5; height++) {
 				for (int i = -5; i < 5; i++)
 				{
-					truncOctahedronShader::ShaderRenderWithRotation(true, startPos + glm::vec3(i*distance, 0, i * distance ), -1, 0, glm::vec3(0, 1, 0));
+					truncOctahedronShader::ShaderRenderWithRotation(true, startPos + glm::vec3(i*distance+x*distance, 0, i * distance ), -1, 0, glm::vec3(0, 1, 0));
 				}
 			}
 		}
@@ -738,7 +737,6 @@ namespace truncOctahedronShader {
 		}"
 	};
 
-	//TODO
 	static const GLchar * trOct_geom_shader_source[] =
 	{
 		"#version 330\n\
@@ -968,5 +966,3 @@ namespace truncOctahedronShader {
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, vertexs);
 	}
 }
-
-//TODO: els compileShader i linkProgram que tinguin les seves propies funcions (est� a l'altre pr�ctic
