@@ -35,7 +35,9 @@ namespace rotationCubes {
 }
 //Namespace para los valores de la Y cuando deban caer o no 
 namespace Fall {
-	glm::vec3 fallingCubes[MaxCubes];
+	const float maxFallDist = 10.f;
+	const float fallSpeed = 0.07f;
+	float currentFallDist = 0;
 }
 
 namespace arrangedCubes {
@@ -135,6 +137,12 @@ namespace RenderVars {
 			_view = glm::lookAt(cameraPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 		}
 	}
+	void goOrto() {
+		_projection = glm::ortho(-5.f, 5.f, -5.f, 5.f, zNear, zFar);
+	}
+	void goPersp() {
+		_projection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), 0.1f, 10.0f);
+	}
 }
 namespace RV = RenderVars;
 
@@ -151,7 +159,6 @@ namespace Scene {
 		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
 			CubeShader::renderCubeInPos(randomPositions::arrayCubes[cubeN],0,_distanceWall);
 			//CubeShader::ShaderRenderCode(currentTime, cubeN, 0.f);												//Renderizar los cubos. 0.f es rotation_angle
-			
 		}
 	}
 
@@ -171,12 +178,15 @@ namespace Scene {
 	void renderScene3(double currentTime) {
 		ImGui::Begin("Scene #3");
 		ImGui::Text("Cubes");
+		if (ImGui::Button("Reset"))
+			Fall::currentFallDist = 0;
 		ImGui::End();
-
-		rotation_angle += 0.01f;
+		Fall::currentFallDist += Fall::fallSpeed;
+		if (Fall::currentFallDist > Fall::maxFallDist)
+			Fall::currentFallDist = 0;
+		rotation_angle += 0.05f;
 		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
 			CubeShader::ShaderRenderCode(currentTime, cubeN, rotation_angle);												//Renderizar los shaders. 0.f es rotation_angle
-			
 		}
 	}
 
@@ -196,30 +206,20 @@ namespace Scene {
 		if (!io.WantCaptureKeyboard) {
 			if (io.KeysDown[49] && Scene::currentScene != 1) {		// Key 1
 				Scene::currentScene = 1;
-				for (int i = 0; i < MaxCubes; i++) {
-					Fall::fallingCubes[MaxCubes].y = 0.f;
-				}
+				RV::goPersp();
 			}
 			if (io.KeysDown[50] && Scene::currentScene != 2) {		// Key 2
 				arrangedCubes::arrangeCubesIntoLattice();
 				Scene::currentScene = 2;
-				for (int i = 0; i < MaxCubes; i++) {
-					Fall::fallingCubes[MaxCubes].y = 0.f;
-				}
+				RV::goPersp();
 			}
 			if (io.KeysDown[51] && Scene::currentScene != 3) {		// Key 3
 				Scene::currentScene = 3;
-				for (int i = 0; i < MaxCubes; i++) {
-					Fall::fallingCubes[MaxCubes].y -= 0.01f;
-
-				}
+				RV::goOrto();
 			}
 			if (io.KeysDown[54] && Scene::currentScene != 6) {		// Key 6
 				Scene::currentScene = 6;
-				for (int i = 0; i < MaxCubes; i++) {
-					Fall::fallingCubes[MaxCubes].y = 0.f;
-
-				}
+				//persp? orto?
 			}
 		}
 	}
@@ -252,7 +252,7 @@ void GLinit(int width, int height) {
 	glEnable(GL_CULL_FACE);
 	RV::_view = glm::lookAt(RV::cameraPos, RV::cameraTarget, glm::vec3(0, 1, 0));
 	//RV::_projection = glm::ortho(-5.f, 5.f, -5.f, 5.f, RV::zNear, RV::zFar);
-	RV::_projection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), 0.1f, 10.0f);
+	RV::goPersp();
 
 	randomPositions::setNewRandPositions();
 
@@ -279,12 +279,6 @@ void GLinit(int width, int height) {
 		//rotationCubes::arrayRotationCubes[i] = glm::vec3(1.f, 1.f, 1.f);
 		//std::cout << ((float)rand())/40000.f<< std::endl;				//Imprimir los randoms. De esta forma, se puede controlar mucho mejor los resultados 
 
-	}
-
-	for (int i = 0; i < MaxCubes; i++) {
-		Fall::fallingCubes[MaxCubes].x = 0.f;
-		Fall::fallingCubes[MaxCubes].y = 0.5f;
-		Fall::fallingCubes[MaxCubes].z = 0.f;
 	}
 
 	CubeShader::ShaderInitCode();					//Inicializar los shaders 
@@ -443,16 +437,12 @@ namespace CubeShader {
 	//-(time/555)
 	static const GLchar * cube_geom_shader_source[] =
 	{ "#version 330																										\n\
-			uniform float time;																							\n\
 			uniform mat4 mvpMat;																						\n\
 			\n\
-			uniform vec3 cubes;			//Position of current cube we are creating (a SINGLE cube)						\n\
-			uniform float square1W;																						\n\
-			uniform mat4 AxisSquare;	//rotation of the cube															\n\
+			uniform mat4 AxisSquare;		//rotation of the cube														\n\
 			\n\
 			uniform float distanceWall;		//lenght of the cube SIDE													\n\
 			\n\
-			uniform vec3 falling;																						\n\
 			layout(triangles) in;																						\n\
 			layout(triangle_strip,max_vertices = 48) out;																\n\
 																														\n\
@@ -462,74 +452,47 @@ namespace CubeShader {
 										vec4(halfSide, halfSide, halfSide,  1.0),							\n\
 										vec4(-halfSide, -halfSide, halfSide,  1.0),							\n\
 										vec4(-halfSide, halfSide, halfSide,  1.0),							\n\
-																														\n\
+																											\n\
 										vec4(halfSide, halfSide, halfSide,  1.0),							\n\
 										vec4(halfSide, halfSide, -halfSide,  1.0),							\n\
 										vec4(-halfSide, halfSide, halfSide,  1.0),							\n\
 										vec4(-halfSide, halfSide, -halfSide,  1.0),							\n\
-																														\n\
+																											\n\
 										vec4(-halfSide, -halfSide, halfSide,  1.0),							\n\
 										vec4(-halfSide, halfSide, halfSide,  1.0),							\n\
 										vec4(-halfSide, -halfSide, -halfSide,  1.0),						\n\
 										vec4(-halfSide, halfSide, -halfSide,  1.0),							\n\
-																														\n\
+																											\n\
 										vec4(-halfSide, -halfSide, -halfSide,  1.0),						\n\
 										vec4(-halfSide, halfSide, -halfSide,  1.0),							\n\
 										vec4(halfSide, -halfSide, -halfSide,  1.0),							\n\
 										vec4(halfSide, halfSide, -halfSide,  1.0),							\n\
-																														\n\
+																											\n\
 										vec4(-halfSide, -halfSide, halfSide,  1.0),							\n\
 										vec4(-halfSide, -halfSide, -halfSide,  1.0),						\n\
 										vec4(halfSide, -halfSide, halfSide,  1.0),							\n\
 										vec4(halfSide, -halfSide, -halfSide,  1.0),							\n\
-																														\n\
+																											\n\
 										vec4(halfSide, -halfSide, -halfSide, 1.0),							\n\
 										vec4(halfSide, halfSide, -halfSide,  1.0),							\n\
 										vec4(halfSide, -halfSide, halfSide,  1.0),							\n\
-										vec4(halfSide, halfSide, halfSide,  1.0));							\n\
-					\n\
-					\n\
-					for(int i = 0; i < 4; i++){																			\n\
-						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
-						gl_PrimitiveID = 0;																				\n\
-						EmitVertex();																					\n\
-					}																									\n\
-					EndPrimitive();																						\n\
-					for(int i = 4; i < 8; i++){																			\n\
-						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
-						gl_PrimitiveID = 1;																				\n\
-						EmitVertex();																					\n\
-					}																									\n\
-					EndPrimitive();																						\n\
-					for(int i = 8; i < 12; i++){																		\n\
-						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
-						gl_PrimitiveID = 2;																				\n\
-						EmitVertex();																					\n\
-					}																									\n\
-					EndPrimitive();																						\n\
-					for(int i = 12; i < 16; i++){																		\n\
-						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
-						gl_PrimitiveID = 3;																				\n\
-						EmitVertex();																					\n\
-					}																									\n\
-					EndPrimitive();																						\n\
-					for(int i = 16; i < 20; i++){																		\n\
-						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
-						gl_PrimitiveID = 4;																				\n\
-						EmitVertex();																					\n\
-					}																									\n\
-					EndPrimitive();																						\n\
-					for(int i = 20; i < 24; i++){																		\n\
-						gl_Position = ((mvpMat * AxisSquare * square[i]) + vec4(falling.x,falling.y,falling.z,0.0) + vec4(cubes.x,cubes.y,cubes.z,1.0));															\n\
-						gl_PrimitiveID = 5;																				\n\
-						EmitVertex();																					\n\
-					}																									\n\
-					EndPrimitive();																						\n\
-																			\n\
-				\n\
+										vec4(halfSide, halfSide, halfSide,  1.0) );							\n\
+																											\n\
+					gl_PrimitiveID = 0;																		\n\
+					int primitive = 0;																		\n\
+																											\n\
+					for(int i = 0; i < 24; i++){															\n\
+						gl_Position = mvpMat * AxisSquare * square[i];										\n\
+						EmitVertex();																		\n\
+						primitive++;																		\n\
+						if(primitive == 4){				//at the end of a primitive, change face color		\n\
+							EndPrimitive();																	\n\
+							primitive = 0;																	\n\
+							gl_PrimitiveID++;																\n\
+						}																					\n\
+					}																						\n\
+																											\n\
 			}" };
-
-	//Para el ejericio 3, se aplica un vector4 que le restara continuamente la posicion Y (time siempre esta aumentando de valor) para que caiga 
 
 	GLuint	ShaderCompile() {			//Punter a un espai de memoria, on tenim el nostre programa. Ens donara un valor, per invocar al programa compilat. GLuint = enter si o si positiu 
 		GLuint vertex_shader;				//GLuint es un unsigned int, que guarda direccions de memoria 
@@ -590,37 +553,20 @@ namespace CubeShader {
 	
 	void ShaderRenderCode(double currentTime, int cubeN, float rotation_angle) {
 		glUseProgram(ShaderRenderProgram);
-		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "time"), (GLfloat)currentTime);
-		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)randomPositions::arrayCubes[cubeN].x, (GLfloat)randomPositions::arrayCubes[cubeN].y, (GLfloat)randomPositions::arrayCubes[cubeN].z);
 		glUniform1f(glGetUniformLocation(ShaderRenderProgram, "distanceWall"), (GLfloat)_distanceWall);			//distancia de las paredes respecto a la seed 
-		
-		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "falling"), (GLfloat)Fall::fallingCubes[cubeN].x, (GLfloat)Fall::fallingCubes[cubeN].y, (GLfloat)Fall::fallingCubes[cubeN].z);				//Caida de los cubos 
 
-
-		glm::mat4 rotSquare;
-		/*if (CubeCanRotate) {
-			rotation_angle += 0.01f;
-		}
-		else rotation_angle = 0.f;*/
-		rotSquare = glm::rotate(glm::mat4(), rotation_angle, rotationCubes::arrayRotationCubes[cubeN]);										//E3. Con esto, se hace que la matriz rote.
-		
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(rotSquare));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
-		//myMVPsquare = myMVPsquare * rotSquare;																						//E3. Para aplicar la transformacion
-		//glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(myMVPsquare));		//E3. La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
-		
+		glm::mat4 rotSquare = glm::rotate(glm::mat4(), rotation_angle, rotationCubes::arrayRotationCubes[cubeN]);										//E3. Con esto, se hace que la matriz rote.
 		
 		//std::cout << glm::to_string(rotationCubes::arrayRotationCubes[cubeN]) << std::endl;
-		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RV::_MVP));			//La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
+		glm::mat4 cubeModel = glm::translate(randomPositions::arrayCubes[cubeN] + glm::vec3(0,-Fall::currentFallDist,0)) * rotSquare;	//Translation mat(Cube pos + falling dist) * rotation
+		glm::mat4 MVPmatrix = RV::_projection * RV::_view * cubeModel;
+		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(MVPmatrix));			//La matriz se aplica a mvpMat, que multiplicara a los puntos en cube_geom_shader_source[]
 
-		
-		//glPointSize(40.0f);						//Cada vertex te un tamany de 40 pixels 
 		glDrawArrays(GL_TRIANGLES, 0, 24);		//Compte, es POINTS, no POINT. El 3 es que dibuixa 3 punts 
 	}
 
 	void renderCubeInPos(glm::vec3 position, float rotation_angle, float sideLenght) {
 		glUseProgram(ShaderRenderProgram);
-		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "cubes"), (GLfloat)0, (GLfloat)0, (GLfloat)0);					//Useless variables
-		glUniform3f(glGetUniformLocation(ShaderRenderProgram, "falling"), (GLfloat)0, (GLfloat)0, (GLfloat)0);
 		glUniformMatrix4fv(glGetUniformLocation(ShaderRenderProgram, "AxisSquare"), 1, GL_FALSE, glm::value_ptr(glm::mat4()));
 		//glm::mat4 rotSquare = glm::rotate(glm::mat4(), rotation_angle, glm::vec3(0));	//can be changed if needed
 
