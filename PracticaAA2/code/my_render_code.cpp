@@ -195,7 +195,7 @@ namespace Scene {
 
 		for (int i = 0; i < arrangedCubes::cubicLatticePositions.size(); i++)
 		{
-			//std::cout << arrangedCubes::cubicLatticePositions.at(i).x << "," << arrangedCubes::cubicLatticePositions.at(i).y << "," << arrangedCubes::cubicLatticePositions.at(i).z << std::endl;
+			//std::cout << arrangedCubes::cubicLatticePositions.at(i).x << "," << arrangedCubes::cubicLatticePositions.at(i).y << "," << arrangedCubes::cubicLatticePositions.at(i).height << std::endl;
 			//truncOctahedronShader::ShaderRenderCode(currentTime, false, arrangedCubes::cubicLatticePositions.at(i));
 			CubeShader::renderCubeInPos(arrangedCubes::cubicLatticePositions.at(i), 0, _distanceWall);
 		}
@@ -292,11 +292,21 @@ namespace Scene {
 
 	void renderScene6(double currentTime) {
 		ImGui::Begin("Scene #6");
-		ImGui::Text("Truncated octahedrons:\nDrawing wireframes");
+		ImGui::Text("Bitruncated cubic honeycomb:\nDrawing wireframes");
 		ImGui::End();
 
-		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.z;
-		truncOctahedronShader::ShaderRenderWithRotation(true, truncOctahedronShader::truncatedOctTest);
+		//std::cout << truncatedOctTest.x << "," << truncatedOctTest.y << "," << truncatedOctTest.height;
+		glm::vec3 startPos = glm::vec3(0);
+
+		float distance = 2 * truncOctahedronShader::sideLenght / 3;	//entre trnc oct.
+		for (int xzDis = -5; xzDis < 5; xzDis++) {
+			for (int height = -5; height < 5; height++) {
+				for (int i = -5; i < 5; i++)
+				{
+					truncOctahedronShader::ShaderRenderWithRotation(true, startPos + glm::vec3(i*distance, 0, i * distance ), -1, 0, glm::vec3(0, 1, 0));
+				}
+			}
+		}
 
 	}
 	
@@ -392,7 +402,7 @@ void GLinit(int width, int height) {
 		rotationCubes::arrayRotationCubes[i].z = _squareZRotation;
 		//std::cout << rotationCubes::arrayRotationCubes[i].x << std::endl;
 		//std::cout << rotationCubes::arrayRotationCubes[i].y << std::endl;
-		//std::cout << rotationCubes::arrayRotationCubes[i].z << std::endl;
+		//std::cout << rotationCubes::arrayRotationCubes[i].height << std::endl;
 		//rotationCubes::arrayRotationCubes[i] = glm::vec3(1.f, 1.f, 1.f);
 		//std::cout << ((float)rand())/40000.f<< std::endl;				//Imprimir los randoms. De esta forma, se puede controlar mucho mejor los resultados 
 
@@ -523,35 +533,35 @@ namespace CubeShader {
 		}"
 	};
 
-	//vec4 square[24] = vec4[24](vec4(distanceWall, -distanceWall, distanceWall, 1.0) + vec4(cubes.x, cubes.y, cubes.z, 0.0), \n\
-	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
-	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
-	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
+	//vec4 square[24] = vec4[24](vec4(distanceWall, -distanceWall, distanceWall, 1.0) + vec4(cubes.x, cubes.y, cubes.height, 0.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
 	//	\n\
-	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
-	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
-	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
-	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
 	//	\n\
-	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
-	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
-	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
-	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
 	//	\n\
-	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
-	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
-	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
-	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
 	//	\n\
-	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
-	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
-	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
-	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
+	//	vec4(-distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
 	//	\n\
-	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
-	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.z, 1.0), \n\
-	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.z, 1.0), \n\
-	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.z, 1.0));				\n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, -distanceWall + cubes.height, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, -distanceWall + cubes.y, distanceWall + cubes.height, 1.0), \n\
+	//	vec4(distanceWall + cubes.x, distanceWall + cubes.y, distanceWall + cubes.height, 1.0));				\n\
 
 
 
@@ -944,7 +954,7 @@ namespace truncOctahedronShader {
 
 		glUniform1f(glGetUniformLocation(currentProgram, "sideLenght"), (GLfloat)sideLenght);
 		glUniform1i(glGetUniformLocation(currentProgram, "fcolor"), (GLint)color);
-		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), (GLfloat)truncatedOctTest.x, (GLfloat)truncatedOctTest.y, (GLfloat)truncatedOctTest.z, (GLfloat)truncatedOctTest.w);
+		//glUniform4f(glGetUniformLocation(ShaderRenderProgram, "centerPos"), (GLfloat)truncatedOctTest.x, (GLfloat)truncatedOctTest.y, (GLfloat)truncatedOctTest.height, (GLfloat)truncatedOctTest.w);
 
 		glm::mat4 rot;
 		if (rotationRads != 0)
