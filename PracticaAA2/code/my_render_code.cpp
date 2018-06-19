@@ -251,11 +251,11 @@ namespace Scene {
 
 	void renderScene5(double currentTime) {
 		ImGui::Begin("Scene #5");
-		ImGui::Text("Mattrix effect");
+		ImGui::Text("Matrix effect");
 		if (ImGui::Button("Reset"))
 			Matrix::currentFallDist = 0;
 		ImGui::End();
-
+		
 
 		//Render bottom objects (white)
 		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
@@ -302,16 +302,64 @@ namespace Scene {
 			
 	}
 
+	//Scane 6 vars
+	namespace S6 {
+		int currentPart = 1;
+		//arraylist
+
+	}
+
 	void renderScene6(double currentTime) {
 		ImGui::Begin("Scene #6");
-		ImGui::Text("Bitruncated cubic honeycomb:\nDrawing wireframes");
+		ImGui::Text("Bitruncated honeycomb:\nDrawing wireframes");
+		ImGui::Separator();
+		for (int b = 1; b < 5; b++)
+		{
+			bool popStyle = false;
+			if (b == S6::currentPart) {
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1, 0, 0, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1, 0, 0, 1.f));
+				popStyle = true;
+			}
+			if (ImGui::Button(std::string("Part " + std::to_string(b)).c_str())) {
+				S6::currentPart = b;
+				switch (b)
+				{
+				case 1:
+					break;
+				case 2:
+					break;
+				case 3:
+					break;
+				case 4:
+					break;
+				default:
+					break;
+				}
+			}
+			if (popStyle) {
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+			}
+		}
+		
+		if (S6::currentPart == 4)
+		{
+			ImGui::Button("Switch planes");
+		}
 		ImGui::End();
+
+		if (S6::currentPart >= 2)
+		{
+			RV::goOrto();
+		}
+		else {
+			RV::goPersp();
+		}
 
 		glm::vec3 firstPos = glm::vec3(0);
 
-		//7 * 2 objects in every axis... almost
-
-		//TODO: posar variables/constants per el numero de oct. trunc.
+		const int TRUNC_OCT_PER_AXIS = 14;
 
 		//each half "fits the holes" of the other half
 		for (int aHalf = 0; aHalf < 2; aHalf++)
@@ -320,18 +368,18 @@ namespace Scene {
 			{
 				firstPos += glm::vec3(0, truncOctahedronShader::getHeight() / 2, 2 * truncOctahedronShader::sideLenght / 3);
 			}
-			for (int nx = 0; nx < 14; nx++)
+			for (int nx = 0; nx < TRUNC_OCT_PER_AXIS; nx++)
 			{
 				glm::vec3 startPos = firstPos + glm::vec3(nx*2*truncOctahedronShader::sideLenght/3,0,0);
-				if (nx % 2 != 0)	//if the number is odd
+				if (nx % 2 != 0)	//if the number is odd, 
 				{
 					startPos.z += 2 * truncOctahedronShader::sideLenght/3;
 				}
-				for (int nz = 0; nz < 7; nz++)
+				for (int nz = 0; nz < TRUNC_OCT_PER_AXIS/2; nz++)
 				{
-					for (int ny = 0; ny < 7; ny++)	//vertical column of trunc. oct. (connecting by the upper and the lower squares)
+					for (int ny = 0; ny < TRUNC_OCT_PER_AXIS/2; ny++)	//vertical column of trunc. oct. (connecting by the upper and the lower squares)
 					{
-						truncOctahedronShader::ShaderRenderWithRotation(false, startPos + glm::vec3(0, ny * truncOctahedronShader::getHeight(), nz * 4 * truncOctahedronShader::sideLenght/3), -1, 0, glm::vec3(0, 1, 0));
+						truncOctahedronShader::ShaderRenderWithRotation(true, startPos + glm::vec3(0, ny * truncOctahedronShader::getHeight(), nz * 4 * truncOctahedronShader::sideLenght/3), -1, 0, glm::vec3(0, 1, 0));
 					}
 				}
 			}
