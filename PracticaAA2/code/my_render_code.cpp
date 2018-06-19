@@ -104,6 +104,8 @@ namespace truncOctahedronShader {
 	GLuint ShaderVAO;
 	GLuint WireframeShaderVAO;
 
+	float getHeight();
+
 	//glm::vec4 truncatedOctTest = _square1;
 	glm::vec4 tOctPositions[5] = { glm::vec4(30.0f, 30.0f, -30.0f, 1.0f) };
 	glm::vec4 truncatedOctTest = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -114,7 +116,7 @@ namespace truncOctahedronShader {
 namespace RenderVars {
 	const float FOV = glm::radians(90.f);
 	const float zNear = 0.01f;
-	const float zFar = 70.f;
+	const float zFar = 210.f;
 	float currentFOV = FOV;
 
 	glm::mat4 _projection;
@@ -156,15 +158,25 @@ namespace RenderVars {
 				glm::vec3 dirToTarget = glm::normalize(cameraTarget - cameraPos);
 				cameraPos -= dirToTarget * 0.3f;
 			}
+			if (io.KeysDown[97]) { // A
+				glm::vec3 dirToTarget = glm::normalize(cameraTarget - cameraPos);
+				glm::vec3 leftVector = glm::cross(glm::vec3(0,1,0),dirToTarget);
+				cameraTarget += glm::normalize(leftVector) * 0.3f;
+			}
+			if (io.KeysDown[100]) { // D
+				glm::vec3 dirToTarget = glm::normalize(cameraTarget - cameraPos);
+				glm::vec3 rightVector = glm::cross(dirToTarget, glm::vec3(0, 1, 0));
+				cameraTarget += glm::normalize(rightVector) * 0.3f;
+			}
 			//actualitzar camera
-			_view = glm::lookAt(cameraPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+			_view = glm::lookAt(cameraPos, cameraTarget, glm::vec3(0, 1, 0));
 		}
 	}
 	void goOrto() {
 		_projection = glm::ortho(-ortoSize, ortoSize, -ortoSize, ortoSize, zNear, zFar);
 	}
 	void goPersp() {
-		_projection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), 0.1f, 10.0f);
+		_projection = glm::perspective(glm::radians(70.0f), (4.0f / 3.0f), zNear, zFar);
 	}
 	void resetToDefaultValues() {
 		cameraPos = glm::vec3(0, 0, 5);
@@ -295,14 +307,32 @@ namespace Scene {
 		ImGui::Text("Bitruncated cubic honeycomb:\nDrawing wireframes");
 		ImGui::End();
 
-		glm::vec3 startPos = glm::vec3(0);
+		glm::vec3 firstPos = glm::vec3(0);
 
-		float distance = 2 * truncOctahedronShader::sideLenght / 3;	//entre trnc oct.
-		for (int x = -7; x < 7; x++) {
-			for (int height = -5; height < 5; height++) {
-				for (int i = -5; i < 5; i++)
+		//7 * 2 objects in every axis... almost
+
+		//TODO: posar variables/constants per el numero de oct. trunc.
+
+		//each half "fits the holes" of the other half
+		for (int aHalf = 0; aHalf < 2; aHalf++)
+		{
+			if (aHalf == 1)
+			{
+				firstPos += glm::vec3(0, truncOctahedronShader::getHeight() / 2, 2 * truncOctahedronShader::sideLenght / 3);
+			}
+			for (int nx = 0; nx < 14; nx++)
+			{
+				glm::vec3 startPos = firstPos + glm::vec3(nx*2*truncOctahedronShader::sideLenght/3,0,0);
+				if (nx % 2 != 0)	//if the number is odd
 				{
-					truncOctahedronShader::ShaderRenderWithRotation(true, startPos + glm::vec3(i*distance+x*distance, 0, i * distance ), -1, 0, glm::vec3(0, 1, 0));
+					startPos.z += 2 * truncOctahedronShader::sideLenght/3;
+				}
+				for (int nz = 0; nz < 7; nz++)
+				{
+					for (int ny = 0; ny < 7; ny++)	//vertical column of trunc. oct. (connecting by the upper and the lower squares)
+					{
+						truncOctahedronShader::ShaderRenderWithRotation(false, startPos + glm::vec3(0, ny * truncOctahedronShader::getHeight(), nz * 4 * truncOctahedronShader::sideLenght/3), -1, 0, glm::vec3(0, 1, 0));
+					}
 				}
 			}
 		}
@@ -710,6 +740,11 @@ namespace CubeShader {
 	}
 }
 namespace truncOctahedronShader {
+
+	float getHeight() {
+		return 2.f * glm::sqrt(2.f) * sideLenght / 3;
+	}
+
 	static const GLchar * trOct_vertex_shader_source[] =
 	{
 		"#version 330\n\
