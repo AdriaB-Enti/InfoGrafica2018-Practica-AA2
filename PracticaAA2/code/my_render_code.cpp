@@ -36,7 +36,7 @@ namespace rotationCubes {
 //Namespace para los valores de la Y cuando deban caer o no 
 namespace Fall {
 	const float maxFallDist = 9.f;
-	const float fallSpeed = 0.07f;
+	const float fallSpeed = 0.02f;	//0.07
 	float currentFallDist = 0;
 }
 
@@ -133,7 +133,7 @@ namespace RenderVars {
 
 	glm::vec3 cameraPos = glm::vec3(0, 0, 5);
 	glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
-	float ortoSize = 5.f;
+	float ortoSize = 10.f;
 
 	void testingCamera() {
 		ImGuiIO& io = ImGui::GetIO();
@@ -305,7 +305,25 @@ namespace Scene {
 	//Scane 6 vars
 	namespace S6 {
 		int currentPart = 1;
-		//arraylist
+
+		const int TRUNC_OCT_PER_AXIS = 14;
+		const float DISTANCE_THRESHOLD = 0.1f;	//threshold distance to the center of one of the seeds in the honeycomb to turn white
+
+		const float TIME_FOR_NEXT_FALL_TROCT = 1.f;
+		float nextFallingTrOctTimer = TIME_FOR_NEXT_FALL_TROCT;
+
+		struct columnPos {
+			glm::vec3 position;
+			bool yDisplaced;
+		};
+		std::vector<columnPos> columnPositions;	//list of trunc. oct. columns positions, where the new tunc. oct. can fall
+		struct fallingOct {
+			glm::vec3 position;
+			bool yDisplaced;
+			//rotation
+		};
+		std::list<fallingOct> fallingTruncOct;	//all the falling trunc. otc.
+		bool columnPositionsSet = false;
 
 	}
 
@@ -326,12 +344,20 @@ namespace Scene {
 				switch (b)
 				{
 				case 1:
+					
 					break;
 				case 2:
+					//Place camera in x-y plane
+					RV::cameraPos = glm::vec3(5, 6, -5);
+					RV::cameraTarget = glm::vec3(5, 6, 0);
+					std::cout << "camera pos " << RV::cameraPos.x << ", " << RV::cameraPos.y << ", " << RV::cameraPos.z << "\n";
+
 					break;
 				case 3:
+
 					break;
 				case 4:
+
 					break;
 				default:
 					break;
@@ -357,9 +383,8 @@ namespace Scene {
 			RV::goPersp();
 		}
 
+		//DRAW TRUNCATED HONEYCOMB + set column positions
 		glm::vec3 firstPos = glm::vec3(0);
-
-		const int TRUNC_OCT_PER_AXIS = 14;
 
 		//each half "fits the holes" of the other half
 		for (int aHalf = 0; aHalf < 2; aHalf++)
@@ -368,21 +393,84 @@ namespace Scene {
 			{
 				firstPos += glm::vec3(0, truncOctahedronShader::getHeight() / 2, 2 * truncOctahedronShader::sideLenght / 3);
 			}
-			for (int nx = 0; nx < TRUNC_OCT_PER_AXIS; nx++)
+			for (int nx = 0; nx < S6::TRUNC_OCT_PER_AXIS; nx++)
 			{
 				glm::vec3 startPos = firstPos + glm::vec3(nx*2*truncOctahedronShader::sideLenght/3,0,0);
 				if (nx % 2 != 0)	//if the number is odd, 
 				{
 					startPos.z += 2 * truncOctahedronShader::sideLenght/3;
 				}
-				for (int nz = 0; nz < TRUNC_OCT_PER_AXIS/2; nz++)
+				for (int nz = 0; nz < S6::TRUNC_OCT_PER_AXIS/2; nz++)
 				{
-					for (int ny = 0; ny < TRUNC_OCT_PER_AXIS/2; ny++)	//vertical column of trunc. oct. (connecting by the upper and the lower squares)
+					glm::vec3 truncOctP = startPos + glm::vec3(0, 0, nz * 4 * truncOctahedronShader::sideLenght / 3);
+					
+					if (!S6::columnPositionsSet) {
+						S6::columnPos newColPos;
+						newColPos.position = glm::vec3(truncOctP.x, 0, truncOctP.z);
+						newColPos.yDisplaced = aHalf == 1;
+						S6::columnPositions.push_back(newColPos);
+					}
+					
+					for (int ny = 0; ny < S6::TRUNC_OCT_PER_AXIS/2; ny++)	//vertical column of trunc. oct. (connecting by the upper and the lower squares)
 					{
-						truncOctahedronShader::ShaderRenderWithRotation(true, startPos + glm::vec3(0, ny * truncOctahedronShader::getHeight(), nz * 4 * truncOctahedronShader::sideLenght/3), -1, 0, glm::vec3(0, 1, 0));
+						truncOctP.y = startPos.y + ny * truncOctahedronShader::getHeight();
+						truncOctahedronShader::ShaderRenderWithRotation(true, truncOctP, -1, 0, glm::vec3(0, 1, 0));
 					}
 				}
 			}
+		}
+		if (!S6::columnPositionsSet)
+			S6::columnPositionsSet = true;
+
+		switch (S6::currentPart)
+		{
+		case 2:
+		{
+			//Add a new trunc. oct. when necessary
+			if (S6::nextFallingTrOctTimer < currentTime)
+			{
+				S6::nextFallingTrOctTimer = currentTime + S6::TIME_FOR_NEXT_FALL_TROCT;
+				//create a random position
+				int randp = rand() % S6::columnPositions.size();
+				glm::vec3 newPos = S6::columnPositions.at(randp).position + glm::vec3(0, truncOctahedronShader::getHeight() * (2 + S6::TRUNC_OCT_PER_AXIS/2), 0);
+				if (S6::columnPositions.at(randp).yDisplaced)
+					newPos.y += truncOctahedronShader::getHeight() / 2;
+				S6::fallingOct newOcta;
+				newOcta.position = newPos;
+				newOcta.yDisplaced = S6::columnPositions.at(randp).yDisplaced;
+				S6::fallingTruncOct.push_back(newOcta);
+			}
+
+			for (auto o = S6::fallingTruncOct.begin(); o != S6::fallingTruncOct.end();)
+			{
+				//update o
+				o->position += glm::vec3(0, -Fall::fallSpeed, 0);
+				float distance = o->position.y / truncOctahedronShader::getHeight();
+				if (o->yDisplaced)
+				{
+					//if displaced, add height/2 to the previous (or just us +heigth in the calc)
+					distance = (o->position.y + truncOctahedronShader::getHeight()/2) / truncOctahedronShader::getHeight();
+				}
+				distance -= (long)distance;	//get only the fractional part
+				bool shouldIluminate = distance < S6::DISTANCE_THRESHOLD || distance > 1 - S6::DISTANCE_THRESHOLD;
+				if (o->position.y > (truncOctahedronShader::getHeight() * S6::TRUNC_OCT_PER_AXIS/2) + S6::DISTANCE_THRESHOLD )
+				{
+					shouldIluminate = false;
+				}
+				truncOctahedronShader::ShaderRenderWithRotation(!shouldIluminate, o->position, -1, 0, glm::vec3(0, 1, 0));
+
+				if (o->position.y < 0)
+				{
+					o = S6::fallingTruncOct.erase(o);
+				} else {
+					o++;
+				}
+			}
+
+		}
+			break;
+		default:
+			break;
 		}
 
 	}
