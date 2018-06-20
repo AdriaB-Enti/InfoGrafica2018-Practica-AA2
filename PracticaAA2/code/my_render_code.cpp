@@ -307,7 +307,7 @@ namespace Scene {
 		int currentPart = 1;
 
 		const int TRUNC_OCT_PER_AXIS = 14;
-		const float DISTANCE_THRESHOLD = 0.1f;	//threshold distance to the center of one of the seeds in the honeycomb to turn white
+		const float DISTANCE_THRESHOLD = 0.05f;	//threshold distance to the center of one of the seeds in the honeycomb to turn white
 
 		const float TIME_FOR_NEXT_FALL_TROCT = 1.f;
 		float nextFallingTrOctTimer = TIME_FOR_NEXT_FALL_TROCT;
@@ -320,7 +320,7 @@ namespace Scene {
 		struct fallingOct {
 			glm::vec3 position;
 			bool yDisplaced;
-			//rotation
+			glm::vec3 rotAxis;	//rotation axis
 		};
 		std::list<fallingOct> fallingTruncOct;	//all the falling trunc. otc.
 		bool columnPositionsSet = false;
@@ -438,27 +438,32 @@ namespace Scene {
 				S6::fallingOct newOcta;
 				newOcta.position = newPos;
 				newOcta.yDisplaced = S6::columnPositions.at(randp).yDisplaced;
+				newOcta.rotAxis = glm::vec3((rand()%10)-5, (rand() % 10) - 5, (rand() % 10) - 5);
+				newOcta.rotAxis = glm::normalize(newOcta.rotAxis);
 				S6::fallingTruncOct.push_back(newOcta);
 			}
 
 			for (auto o = S6::fallingTruncOct.begin(); o != S6::fallingTruncOct.end();)
 			{
-				//update o
 				o->position += glm::vec3(0, -Fall::fallSpeed, 0);
 				float distance = o->position.y / truncOctahedronShader::getHeight();
 				if (o->yDisplaced)
 				{
-					//if displaced, add height/2 to the previous (or just us +heigth in the calc)
+					//if displaced, add height/2 to the previous distance
 					distance = (o->position.y + truncOctahedronShader::getHeight()/2) / truncOctahedronShader::getHeight();
 				}
 				distance -= (long)distance;	//get only the fractional part
+
 				bool shouldIluminate = distance < S6::DISTANCE_THRESHOLD || distance > 1 - S6::DISTANCE_THRESHOLD;
-				if (o->position.y > (truncOctahedronShader::getHeight() * S6::TRUNC_OCT_PER_AXIS/2) + S6::DISTANCE_THRESHOLD )
+				float maxHeight = o->yDisplaced ? (truncOctahedronShader::getHeight() * (S6::TRUNC_OCT_PER_AXIS / 2)-0.5f) + S6::DISTANCE_THRESHOLD
+					: (truncOctahedronShader::getHeight() * (S6::TRUNC_OCT_PER_AXIS / 2)-1) + S6::DISTANCE_THRESHOLD;
+				
+				if (o->position.y > maxHeight )
 				{
 					shouldIluminate = false;
 				}
-				truncOctahedronShader::ShaderRenderWithRotation(!shouldIluminate, o->position, -1, 0, glm::vec3(0, 1, 0));
-
+				truncOctahedronShader::ShaderRenderWithRotation(false, o->position, shouldIluminate ? 6 : -1, distance * 2 * glm::pi<float>(), o->rotAxis);
+				
 				if (o->position.y < 0)
 				{
 					o = S6::fallingTruncOct.erase(o);
