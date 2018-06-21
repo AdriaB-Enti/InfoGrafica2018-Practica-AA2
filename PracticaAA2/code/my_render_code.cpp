@@ -22,7 +22,6 @@ bool CubeCanRotate = false;												//Si el cubo puede rotar
 const int MaxCubes = 10;									//Warning: if all cubes are drawn in the same exact position, visualitzation could be wrong
 
 
-
 //Forward declarations and namespaces
 
 namespace randomPositions {
@@ -97,7 +96,7 @@ namespace truncOctahedronShader {
 	void ShaderInitCode();
 	GLuint ShaderCompile(bool wireframe);
 	void ShaderCleanupCode(void);
-	void ShaderRenderWithRotation(bool wireframe, glm::vec3 otruncOctPos, int color=-1, float rotationRads = 0, glm::vec3 rotationAxis = glm::vec3(1));		//Color/Rotation/rotationAxis are optional parameters. Color can only be [0...6]
+	void ShaderRenderWithRotation(bool wireframe, glm::vec3 otruncOctPos, int color=-1, float rotationRads = 0, glm::vec3 rotationAxis = glm::vec3(1));		//Color/Rotation/rotationAxis are optional parameters. Color can only be [-1...6]
 
 	GLuint ShaderRenderProgram;
 	GLuint WireframeShaderRenderProgram;
@@ -106,7 +105,6 @@ namespace truncOctahedronShader {
 
 	float getHeight();
 
-	//glm::vec4 truncatedOctTest = _square1;
 	glm::vec4 tOctPositions[5] = { glm::vec4(30.0f, 30.0f, -30.0f, 1.0f) };
 	glm::vec4 truncatedOctTest = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	float sideLenght = 1.2f;
@@ -199,7 +197,6 @@ namespace Scene {
 
 		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
 			CubeShader::renderCubeInPos(randomPositions::arrayCubes[cubeN],0,_distanceWall);
-			//CubeShader::ShaderRenderCode(currentTime, cubeN, 0.f);												//Renderizar los cubos. 0.f es rotation_angle
 		}
 	}
 
@@ -210,8 +207,6 @@ namespace Scene {
 
 		for (int i = 0; i < arrangedCubes::cubicLatticePositions.size(); i++)
 		{
-			//std::cout << arrangedCubes::cubicLatticePositions.at(i).x << "," << arrangedCubes::cubicLatticePositions.at(i).y << "," << arrangedCubes::cubicLatticePositions.at(i).height << std::endl;
-			//truncOctahedronShader::ShaderRenderCode(currentTime, false, arrangedCubes::cubicLatticePositions.at(i));
 			CubeShader::renderCubeInPos(arrangedCubes::cubicLatticePositions.at(i), 0, _distanceWall);
 		}
 	}
@@ -247,7 +242,6 @@ namespace Scene {
 		
 		for (int cubeN = 0; cubeN < MaxCubes; cubeN++) {
 			glm::vec3 truncOctPosition = randomPositions::arrayCubes[cubeN] + glm::vec3(0, -Fall::currentFallDist, 0);
-			//truncOctahedronShader::ShaderRenderCode(false, truncOctPosition);
 			truncOctahedronShader::ShaderRenderWithRotation(false, truncOctPosition, -1, rotation_angle, rotationCubes::arrayRotationCubes[cubeN]);
 		}
 	}
@@ -255,8 +249,10 @@ namespace Scene {
 	void renderScene5(double currentTime) {
 		ImGui::Begin("Scene #5");
 		ImGui::Text("Matrix effect");
-		if (ImGui::Button("Reset"))
+		if (ImGui::Button("Reset")) {
 			Matrix::currentFallDist = 0;
+			Matrix::trailObjectsList.clear();
+		}
 		ImGui::End();
 		
 
@@ -267,7 +263,7 @@ namespace Scene {
 		}
 			
 		//Render trail objects (green)
-		for (std::list<Matrix::objectTrail>::iterator it = Matrix::trailObjectsList.begin(); it != Matrix::trailObjectsList.end(); it++)
+		for (std::list<Matrix::objectTrail>::iterator it = Matrix::trailObjectsList.begin(); it != Matrix::trailObjectsList.end();)
 		{
 			Matrix::objectTrail obTrail = (Matrix::objectTrail)*it;
 			truncOctahedronShader::ShaderRenderWithRotation(false, obTrail.position, 0, obTrail.rotation, obTrail.rotationAxis);
@@ -275,7 +271,10 @@ namespace Scene {
 			//Delete trail objects if needed
 			it->timeLife += Matrix::fallSpeed;
 			if (it->timeLife >= Matrix::objTrailMaxLife) {
-				Matrix::trailObjectsList.erase(it);
+				it = Matrix::trailObjectsList.erase(it);
+			}
+			else {
+				it++;
 			}
 		}
 
@@ -434,10 +433,10 @@ namespace Scene {
 			}
 		}
 
-		//DRAW TRUNCATED HONEYCOMB + set column positions
 		glm::vec3 firstPos = glm::vec3(0);
 
-		//each half "fits the holes" of the other half
+		//DRAW TRUNCATED HONEYCOMB + set column positions
+		//Each half "fits the holes" of the other half
 		for (int aHalf = 0; aHalf < 2; aHalf++)
 		{
 			if (aHalf == 1)
@@ -559,7 +558,6 @@ namespace Scene {
 			}
 			if (io.KeysDown[54] && Scene::currentScene != 6) {		// Key 6
 				Scene::currentScene = 6;
-				//persp? orto?
 				RV::resetToDefaultValues();
 			}
 		}
@@ -701,14 +699,14 @@ namespace arrangedCubes {
 						startPos+z*_distanceWall+z*separation );
 
 					cubicLatticePositions.push_back(newCubePostion);
-					std::cout << "cubeLattice" << newCubePostion.x << " " << newCubePostion.y << " " << newCubePostion.z << "\n";
+					//std::cout << "cubeLattice" << newCubePostion.x << " " << newCubePostion.y << " " << newCubePostion.z << "\n";
 
 					if (cubicLatticePositions.size()==MaxCubes)
 						break;
 				}
 			}
 		}
-		std::cout << "S'han col·locat un total de " << cubicLatticePositions.size() << std::endl;
+		//std::cout << "S'han col·locat un total de " << cubicLatticePositions.size() << std::endl;
 
 	}
 }
