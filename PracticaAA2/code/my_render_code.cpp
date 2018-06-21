@@ -133,6 +133,7 @@ namespace RenderVars {
 
 	glm::vec3 cameraPos = glm::vec3(0, 0, 5);
 	glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
+	glm::vec3 cameraUpVec = glm::vec3(0, 1, 0);
 	float ortoSize = 10.f;
 
 	void testingCamera() {
@@ -169,7 +170,7 @@ namespace RenderVars {
 				cameraTarget += glm::normalize(rightVector) * 0.3f;
 			}
 			//actualitzar camera
-			_view = glm::lookAt(cameraPos, cameraTarget, glm::vec3(0, 1, 0));
+			_view = glm::lookAt(cameraPos, cameraTarget, cameraUpVec);
 		}
 	}
 	void goOrto() {
@@ -180,6 +181,8 @@ namespace RenderVars {
 	}
 	void resetToDefaultValues() {
 		cameraPos = glm::vec3(0, 0, 5);
+		cameraTarget = glm::vec3(0, 0, 0);
+		cameraUpVec = glm::vec3(0, 1, 0);
 	}
 }
 namespace RV = RenderVars;
@@ -344,17 +347,19 @@ namespace Scene {
 				switch (b)
 				{
 				case 1:
-					
+
 					break;
 				case 2:
 					//Place camera in x-y plane
 					RV::cameraPos = glm::vec3(5, 6, -5);
-					RV::cameraTarget = glm::vec3(5, 6, 0);
+					RV::cameraTarget = glm::vec3(5, 6, 5);
 					std::cout << "camera pos " << RV::cameraPos.x << ", " << RV::cameraPos.y << ", " << RV::cameraPos.z << "\n";
 
 					break;
 				case 3:
-
+					//Place camera in y-z plane
+					RV::cameraPos = glm::vec3(-5, 6, 5);
+					RV::cameraTarget = glm::vec3(5, 6, 5);
 					break;
 				case 4:
 
@@ -422,10 +427,7 @@ namespace Scene {
 		if (!S6::columnPositionsSet)
 			S6::columnPositionsSet = true;
 
-		switch (S6::currentPart)
-		{
-		case 2:
-		{
+		if (S6::currentPart >= 2){
 			//Add a new trunc. oct. when necessary
 			if (S6::nextFallingTrOctTimer < currentTime)
 			{
@@ -472,10 +474,6 @@ namespace Scene {
 				}
 			}
 
-		}
-			break;
-		default:
-			break;
 		}
 
 	}
