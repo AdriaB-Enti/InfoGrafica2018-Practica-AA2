@@ -319,15 +319,25 @@ namespace Scene {
 			glm::vec3 position;
 			bool yDisplaced;
 		};
-		std::vector<columnPos> columnPositions;	//list of trunc. oct. columns positions, where the new tunc. oct. can fall
 		struct fallingOct {
 			glm::vec3 position;
 			bool yDisplaced;
 			glm::vec3 rotAxis;	//rotation axis
 		};
+
+		std::vector<columnPos> columnPositions;	//list of trunc. oct. columns positions, where the new tunc. oct. can fall
 		std::list<fallingOct> fallingTruncOct;	//all the falling trunc. otc.
 		bool columnPositionsSet = false;
 
+		float transitionStartTime = 0;
+		enum transitionState
+		{
+			xyPlane,
+			zyPlane,
+			movingToxy,
+			movingTozy
+		};
+		transitionState currentCameraState = transitionState::zyPlane;
 	}
 
 	void renderScene6(double currentTime) {
@@ -353,8 +363,6 @@ namespace Scene {
 					//Place camera in x-y plane
 					RV::cameraPos = glm::vec3(5, 6, -5);
 					RV::cameraTarget = glm::vec3(5, 6, 5);
-					std::cout << "camera pos " << RV::cameraPos.x << ", " << RV::cameraPos.y << ", " << RV::cameraPos.z << "\n";
-
 					break;
 				case 3:
 					//Place camera in y-z plane
@@ -362,7 +370,9 @@ namespace Scene {
 					RV::cameraTarget = glm::vec3(5, 6, 5);
 					break;
 				case 4:
-
+					RV::cameraPos = glm::vec3(-5, 6, 5);
+					RV::cameraTarget = glm::vec3(5, 6, 5);
+					S6::currentCameraState = S6::transitionState::zyPlane;
 					break;
 				default:
 					break;
@@ -376,7 +386,17 @@ namespace Scene {
 		
 		if (S6::currentPart == 4)
 		{
-			ImGui::Button("Switch planes");
+			if (ImGui::Button("Switch planes")) {
+				if (S6::currentCameraState == S6::transitionState::zyPlane)
+				{
+					S6::currentCameraState = S6::transitionState::movingToxy;
+				}
+				else if (S6::currentCameraState == S6::transitionState::xyPlane)
+				{
+					S6::currentCameraState = S6::transitionState::movingTozy;
+				}
+				S6::transitionStartTime = currentTime;
+			}
 		}
 		ImGui::End();
 
@@ -386,6 +406,32 @@ namespace Scene {
 		}
 		else {
 			RV::goPersp();
+		}
+
+		if (S6::currentPart == 4)
+		{
+			float angle = 0;
+			if (S6::currentCameraState == S6::transitionState::movingToxy)
+				angle = currentTime - S6::transitionStartTime;
+			if (S6::currentCameraState == S6::transitionState::movingTozy)
+				angle = glm::pi<float>()*2 -(currentTime - S6::transitionStartTime);
+
+			angle /= 2;	//To make it slower
+
+			if (S6::currentCameraState == S6::transitionState::movingToxy || S6::currentCameraState == S6::transitionState::movingTozy) {
+				RV::cameraPos = glm::vec3(glm::cos(angle+glm::pi<float>()) * 5, 6.f, glm::sin(angle + glm::pi<float>() / 2.f) * 5);
+
+				if (S6::currentCameraState == S6::transitionState::movingToxy && (angle > glm::pi<float>()) )
+				{
+					S6::currentCameraState = S6::transitionState::xyPlane;
+					RV::cameraPos = glm::vec3(5, 6, -5);
+				}
+				if (S6::currentCameraState == S6::transitionState::movingTozy && (angle < 0) )
+				{
+					S6::currentCameraState = S6::transitionState::zyPlane;
+					RV::cameraPos = glm::vec3(-5, 6, 5);
+				}
+			}
 		}
 
 		//DRAW TRUNCATED HONEYCOMB + set column positions
